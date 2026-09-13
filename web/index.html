@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PULSEGUARD - Machine Health Monitoring</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <div class="logo-text">
+                    <h1>PULSEGUARD</h1>
+                    <p>Machine Health Monitoring</p>
+                </div>
+            </div>
+            <div class="header-status">
+                <span class="status-indicator" id="api-status">
+                    <span class="status-dot"></span>
+                    <span id="api-status-text">Connecting...</span>
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Live Status Section -->
+        <section class="section live-status">
+            <div class="section-header">
+                <h2>Live Status</h2>
+                <span class="last-updated" id="last-updated">Last updated: --</span>
+            </div>
+            
+            <div class="status-cards">
+                <!-- Temperature Card -->
+                <div class="status-card temperature-card">
+                    <div class="card-icon">🌡️</div>
+                    <div class="card-content">
+                        <span class="card-label">Temperature</span>
+                        <span class="card-value" id="temperature">--</span>
+                        <span class="card-unit">°C</span>
+                    </div>
+                </div>
+                
+                <!-- Vibration Card -->
+                <div class="status-card vibration-card">
+                    <div class="card-icon">📊</div>
+                    <div class="card-content">
+                        <span class="card-label">Vibration</span>
+                        <span class="card-value" id="vibration">--</span>
+                        <span class="card-unit">g</span>
+                    </div>
+                </div>
+                
+                <!-- Machine Status Card -->
+                <div class="status-card status-card-large">
+                    <div class="card-icon" id="status-icon">🔍</div>
+                    <div class="card-content">
+                        <span class="card-label">Machine Status</span>
+                        <span class="card-value status-value" id="machine-status">--</span>
+                        <p class="status-message" id="status-message">Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="section charts-section">
+            <div class="section-header">
+                <h2>Live Sensor Data</h2>
+            </div>
+            
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3>Temperature History</h3>
+                    <canvas id="temperature-chart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Vibration History</h3>
+                    <canvas id="vibration-chart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Readings Table -->
+        <section class="section readings-section">
+            <div class="section-header">
+                <h2>Recent Readings</h2>
+                <button class="btn btn-secondary" id="refresh-btn">
+                    🔄 Refresh
+                </button>
+            </div>
+            
+            <div class="table-container">
+                <table class="readings-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Temperature</th>
+                            <th>Vibration</th>
+                            <th>Prediction</th>
+                        </tr>
+                    </thead>
+                    <tbody id="readings-table-body">
+                        <tr>
+                            <td colspan="4" class="loading">Loading readings...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Maintenance Status Alert -->
+        <section class="section maintenance-alert" id="maintenance-alert" style="display: none;">
+            <div class="alert-content">
+                <div class="alert-icon" id="alert-icon">⚠️</div>
+                <div class="alert-text">
+                    <h3>Maintenance Alert</h3>
+                    <p id="alert-message"></p>
+                </div>
+                <button class="btn btn-close" id="alert-close">×</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>PULSEGUARD - Machine Health Monitoring System</p>
+            <p class="footer-text">College Project | ESP32 + Firebase + Flask + Machine Learning</p>
+            <p class="footer-text">Last updated: <span id="footer-timestamp">--</span></p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>

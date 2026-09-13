@@ -1,0 +1,115 @@
+# ============================================
+# PulseGuard .gitignore
+# ============================================
+
+# Environment files (NEVER commit secrets!)
+.env
+.env.local
+*.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+*.bak
+
+# Firebase credentials (NEVER commit!)
+serviceAccountKey.json
+firebase-adminsdk*.json
+google-credentials.json
+
+# API keys and secrets
+*.key
+*.pem
+secrets/
+credentials/
+
+# Flask
+instance/
+.webassets-cache
+
+# Node.js (if using)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# ML Model (if using Git LFS instead)
+# model.pkl
+
+# Data files (if sensitive or large)
+data/*.json
+data/*.csv
+
+# Esp32 secrets
+esp32/secrets.h
+esp32/wifi_config.h
+
+# Notifications
+*.notification
+
+# Temporary files
+tmp/
+temp/
+.cache/
+
+# Package managers
+pip-log.txt
+pip-delete-this-directory.txt
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/

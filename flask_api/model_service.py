@@ -1,0 +1,253 @@
+"""
+Model Service for PulseGuard
+
+Handles ML model loading and prediction.
+Supports both trained ML models and rule-based baseline.
+"""
+
+import os
+import pickle
+import logging
+from pathlib import Path
+from typing import Dict, Any, Optional
+
+import numpy as np
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Model path
+MODEL_PATH = Path(__file__).parent / "model.pkl"
+
+
+class ModelService:
+    """Service class for ML model operations."""
+    
+    def __init__(self, model_path: Path = None):
+        """Initialize model service."""
+        self.model_path = model_path or MODEL_PATH
+        self.model = None
+        self.is_rule_based = False
+        self.thresholds = {
+            'normal': {'temp_max': 38.0, 'vib_max': 2.0},
+            'warning': {'temp_max': 40.0, 'vib_max': 5.0},
+            'critical': {'temp_max': float('inf'), 'vib_max': float('inf')}
+        }
+        self._load_model()
+    
+    def _load_model(self):
+        """Load model from disk."""
+        if not self.model_path.exists():
+            logger.warning(f"Model not found at {self.model_path}. Using rule-based baseline.")
+            self.is_rule_based = True
+            return
+        
+        try:
+            logger.info(f"Loading model from {self.model_path}")
+            with open(self.model_path, 'rb') as f:
+                self.model = pickle.load(f)
+            
+            # Check if it's a rule-based baseline
+            if isinstance(self.model, dict) and self.model.get('status') == 'rule_based_baseline':
+                logger.info("Loaded rule-based baseline model")
+                self.is_rule_based = True
+                # Update thresholds from saved model info
+                if 'thresholds' in self.model:
+                    self.thresholds = self.model['thresholds']
+            else:
+                logger.info("Loaded trained ML model")
+                self.is_rule_based = False
+                
+        except Exception as e:
+            logger.error(f"Failed to load model: {e}. Using rule-based baseline.")
+            self.is_rule_based = True
+    
+    def predict(self, temperature: float, vibration: float) -> Dict[str, Any]:
+        """
+        Make prediction for given sensor readings.
+        
+        Args:
+            temperature: Temperature in Celsius
+            vibration: Vibration level
+            
+        Returns:
+            Prediction result with status, message, and metadata
+        """
+        # Input validation
+        if not isinstance(temperature, (int, float)) or not isinstance(vibration, (int, float)):
+            return {
+                'error': 'Invalid input types',
+                'prediction': 'error',
+                'message': 'Temperature and vibration must be numeric values'
+            }
+        
+        if temperature < 0 or vibration < 0:
+            return {
+                'error': 'Invalid input values',
+                'prediction': 'error',
+                'message': 'Temperature and vibration must be non-negative'
+            }
+        
+        if self.is_rule_based or self.model is None:
+            return self._rule_based_prediction(temperature, vibration)
+        else:
+            return self._ml_prediction(temperature, vibration)
+    
+    def _rule_based_prediction(self, temperature: float, vibration: float) -> Dict[str, Any]:
+        """
+        Make prediction using rule-based baseline.
+        
+        IMPORTANT: This is NOT a trained ML model.
+        This is a transparent rule-based system for demonstration.
+        
+        Rules:
+        - NORMAL: temperature < 38°C AND vibration < 2.0
+        - WARNING: (temperature 38-40°C) OR (vibration 2.0-5.0)
+        - CRITICAL: temperature > 40°C OR vibration > 5.0
+        """
+        # Determine status based on rules
+        if temperature > self.thresholds['critical']['temp_max'] or \
+           vibration > self.thresholds['critical']['vib_max']:
+            status = 'critical'
+        elif (self.thresholds['warning']['temp_max'] >= temperature >= 
+              self.thresholds['normal']['temp_max']) or \
+             (self.thresholds['warning']['vib_max'] >= vibration >= 
+              self.thresholds['normal']['vib_max']):
+            status = 'warning'
+        else:
+            status = 'normal'
+        
+        # Generate message based on status
+        messages = {
+            'normal': (
+                "Your machine is operating normally. Based on the current temperature "
+                "and vibration pattern, the machine appears to be in a healthy condition."
+            ),
+            'warning': (
+                "Your machine may be developing an abnormal pattern. Based on the current "
+                "temperature and vibration readings, a possible issue may occur if this trend "
+                "continues. Monitor the machine closely."
+            ),
+            'critical': (
+                "Your machine may be experiencing a potentially abnormal condition. The current "
+                "temperature and vibration pattern indicates a possible risk of damage. Please "
+                "inspect the machine and consider sending it to the maintenance team."
+            )
+        }
+        
+        # Short messages for UI
+        short_messages = {
+            'normal': "Machine is operating normally with a healthy pattern.",
+            'warning': "Possible abnormality detected. Monitor the machine closely.",
+            'critical': "Possible machine damage detected. Inspect the machine and contact the maintenance team."
+        }
+        
+        # Calculate confidence (rule-based has fixed confidence)
+        confidence = 0.85
+        
+        return {
+            'prediction': status,
+            'method': 'rule_based',
+            'confidence': confidence,
+            'message': messages[status],
+            'short_message': short_messages[status],
+            'temperature': temperature,
+            'vibration': vibration,
+            'thresholds': self.thresholds
+        }
+    
+    def _ml_prediction(self, temperature: float, vibration: float) -> Dict[str, Any]:
+        """
+        Make prediction using trained ML model.
+        
+        This is used when a properly trained model is available.
+        """
+        try:
+            # Prepare features
+            features = np.array([[temperature, vibration]])
+            
+            # Make prediction
+            prediction = self.model.predict(features)[0]
+            probabilities = self.model.predict_proba(features)[0]
+            
+            # Determine status
+            status = prediction
+            
+            # Generate message based on status
+            messages = {
+                'normal': (
+                    "Your machine is operating normally. Based on the current temperature "
+                    "and vibration pattern, the machine appears to be in a healthy condition."
+                ),
+                'warning': (
+                    "Your machine may be developing an abnormal pattern. Based on the current "
+                    "temperature and vibration readings, a possible issue may occur if this trend "
+                    "continues. Monitor the machine closely."
+                ),
+                'critical': (
+                    "Your machine may be experiencing a potentially abnormal condition. The current "
+                    "temperature and vibration pattern indicates a possible risk of damage. Please "
+                    "inspect the machine and consider sending it to the maintenance team."
+                )
+            }
+            
+            short_messages = {
+                'normal': "Machine is operating normally with a healthy pattern.",
+                'warning': "Possible abnormality detected. Monitor the machine closely.",
+                'critical': "Possible machine damage detected. Inspect the machine and contact the maintenance team."
+            }
+            
+            # Calculate confidence
+            confidence = float(max(probabilities))
+            
+            # Get class probabilities
+            classes = self.model.classes_
+            prob_dict = {}
+            for i, cls in enumerate(classes):
+                prob_dict[cls] = float(probabilities[i])
+            
+            return {
+                'prediction': status,
+                'method': 'ml_model',
+                'confidence': confidence,
+                'message': messages.get(status, messages['normal']),
+                'short_message': short_messages.get(status, short_messages['normal']),
+                'temperature': temperature,
+                'vibration': vibration,
+                'probabilities': prob_dict,
+                'model_version': 'trained'
+            }
+            
+        except Exception as e:
+            logger.error(f"ML prediction failed: {e}. Falling back to rule-based.")
+            return self._rule_based_prediction(temperature, vibration)
+    
+    def get_model_info(self) -> Dict[str, Any]:
+        """Get information about the current model."""
+        return {
+            'model_path': str(self.model_path),
+            'is_loaded': self.model is not None,
+            'is_rule_based': self.is_rule_based,
+            'method': 'rule_based_baseline' if self.is_rule_based else 'trained_ml_model',
+            'thresholds': self.thresholds,
+            'model_exists': self.model_path.exists()
+        }
+
+
+# Singleton instance
+_model_service = None
+
+
+def get_model_service() -> ModelService:
+    """Get or create singleton model service instance."""
+    global _model_service
+    
+    if _model_service is None:
+        _model_service = ModelService()
+    
+    return _model_service
+
+
+# For backward compatibility
+model_service = get_model_service()

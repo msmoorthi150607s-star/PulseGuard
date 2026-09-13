@@ -1,0 +1,15 @@
+# PulseGuard - Machine Health Monitoring System
+# Install all dependencies: pip install -r requirements.txt
+
+# Flask API
+flask>=2.3.0
+requests>=2.31.0
+
+# Machine Learning
+scikit-learn>=1.3.0
+pandas>=2.0.0
+numpy>=1.24.0
+joblib>=1.2.0
+
+# Environment
+python-dotenv>=1.0.0
