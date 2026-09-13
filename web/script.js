@@ -375,30 +375,6 @@ function updateDisplay(reading) {
     formatTemperature(temperature);
     formatVibration(vibration);
     updateTimestamp(timestamp);
-    
-    // Add subtle glow effect to status cards based on values
-    const tempCard = document.querySelector('.temperature-card');
-    const vibCard = document.querySelector('.vibration-card');
-    
-    if (tempCard) {
-        if (temperature > 40) {
-            tempCard.style.boxShadow = '0 0 25px rgba(239, 68, 68, 0.3)';
-        } else if (temperature > 38) {
-            tempCard.style.boxShadow = '0 0 25px rgba(245, 158, 11, 0.3)';
-        } else {
-            tempCard.style.boxShadow = '';
-        }
-    }
-    
-    if (vibCard) {
-        if (vibration > 5) {
-            vibCard.style.boxShadow = '0 0 25px rgba(239, 68, 68, 0.3)';
-        } else if (vibration > 2) {
-            vibCard.style.boxShadow = '0 0 25px rgba(245, 158, 11, 0.3)';
-        } else {
-            vibCard.style.boxShadow = '';
-        }
-    }
 }
 
 /**
@@ -666,19 +642,13 @@ function startAutoRefresh() {
  * Initialize dashboard
  */
 async function initDashboard() {
-    console.log('✨ Initializing PulseGuard Dashboard...');
+    console.log('Initializing PulseGuard Dashboard...');
     
     // Initialize charts first
     initCharts();
     
     // Initial data fetch
     await refreshData();
-    
-    // Update status to show system is active
-    const statusMessage = document.getElementById('status-message');
-    if (statusMessage && statusMessage.textContent.includes('Initializing')) {
-        statusMessage.textContent = 'System ready • Monitoring active';
-    }
     
     // Start auto-refresh
     startAutoRefresh();
@@ -687,7 +657,7 @@ async function initDashboard() {
     const refreshBtn = document.getElementById('refresh-btn');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', async () => {
-            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin fa-fw"></i> Refreshing...';
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
             refreshBtn.disabled = true;
             
             await refreshData();
@@ -703,7 +673,7 @@ async function initDashboard() {
         alertClose.addEventListener('click', hideAlert);
     }
     
-    console.log('✅ PulseGuard Dashboard initialized successfully!');
+    console.log('Dashboard initialized successfully!');
 }
 
 // ============================================
