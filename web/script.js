@@ -72,22 +72,10 @@ function getTimestampMs() {
 function showAlert(message, type = 'critical') {
     const alert = document.getElementById('maintenance-alert');
     const alertMessage = document.getElementById('alert-message');
-    const alertIcon = document.getElementById('alert-icon');
     
     if (!alert || !alertMessage) return;
     
     alertMessage.textContent = message;
-    
-    if (type === 'critical') {
-        alertIcon.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
-        alert.style.borderColor = 'var(--color-critical)';
-        alert.style.background = 'var(--color-critical-bg)';
-    } else if (type === 'warning') {
-        alertIcon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
-        alert.style.borderColor = 'var(--color-warning)';
-        alert.style.background = 'var(--color-warning-bg)';
-    }
-    
     alert.style.display = 'flex';
 }
 
@@ -105,17 +93,18 @@ function hideAlert() {
  * Update status indicator
  */
 function updateApiStatus(connected) {
-    const statusDot = document.querySelector('.status-dot');
-    const statusText = document.getElementById('api-status-text');
+    const statusSection = document.querySelector('.header-status');
+    const statusDot = statusSection?.querySelector('.status-dot');
+    const statusText = statusSection?.querySelector('.status-text');
     
     if (!statusDot || !statusText) return;
     
     if (connected) {
-        statusDot.style.background = 'var(--color-normal)';
-        statusText.textContent = 'Connected';
+        statusDot.classList.add('connected');
+        statusText.textContent = 'LIVE';
     } else {
-        statusDot.style.background = 'var(--color-critical)';
-        statusText.textContent = 'Disconnected';
+        statusDot.classList.remove('connected');
+        statusText.textContent = 'OFFLINE';
     }
 }
 
@@ -127,15 +116,6 @@ function formatTemperature(temp) {
     if (!tempEl) return;
     
     tempEl.textContent = temp !== null ? temp.toFixed(1) : '--';
-    
-    // Color based on temperature
-    if (temp > 40) {
-        tempEl.style.color = 'var(--color-critical)';
-    } else if (temp > 38) {
-        tempEl.style.color = 'var(--color-warning)';
-    } else {
-        tempEl.style.color = 'var(--color-text)';
-    }
 }
 
 /**
@@ -146,61 +126,32 @@ function formatVibration(vib) {
     if (!vibEl) return;
     
     vibEl.textContent = vib !== null ? vib.toFixed(2) : '--';
-    
-    // Color based on vibration
-    if (vib > 5) {
-        vibEl.style.color = 'var(--color-critical)';
-    } else if (vib > 2) {
-        vibEl.style.color = 'var(--color-warning)';
-    } else {
-        vibEl.style.color = 'var(--color-text)';
-    }
 }
 
 /**
  * Update machine status display
  */
 function updateMachineStatus(prediction, message, shortMessage) {
-    const statusEl = document.getElementById('machine-status');
-    const messageEl = document.getElementById('status-message');
-    const statusIcon = document.getElementById('status-icon');
+    const statusBadge = document.getElementById('status-badge');
+    const statusLabel = document.getElementById('machine-status');
+    const statusLight = statusBadge?.querySelector('.status-light');
+    const statusDesc = document.getElementById('status-message');
     
-    if (!statusEl || !messageEl) return;
+    if (!statusLabel || !statusLight || !statusDesc) return;
     
     const status = prediction || 'unknown';
-    statusEl.textContent = status ? status.toUpperCase() : '--';
+    statusLabel.textContent = status ? status.toUpperCase() : '--';
+    statusLabel.className = 'status-label ' + status;
+    statusLight.className = 'status-light ' + status;
     
-    // Set message
+    // Set description message
     if (shortMessage) {
-        messageEl.textContent = shortMessage;
+        statusDesc.textContent = shortMessage;
     } else if (message) {
-        // Truncate long message for display
-        messageEl.textContent = message.length > 100 ? 
-            message.substring(0, 100) + '...' : message;
+        statusDesc.textContent = message.length > 120 ? 
+            message.substring(0, 120) + '...' : message;
     } else {
-        messageEl.textContent = 'No prediction available';
-    }
-    
-    // Update icon and color based on status
-    // Reset icon class first
-    statusIcon.className = 'fas fa-circle';  // Default
-    
-    if (status === 'critical') {
-        statusEl.style.color = 'var(--color-critical)';
-        statusIcon.className = 'fas fa-exclamation-circle';  // Critical icon
-        messageEl.style.color = 'var(--color-critical)';
-    } else if (status === 'warning') {
-        statusEl.style.color = 'var(--color-warning)';
-        statusIcon.className = 'fas fa-exclamation-triangle';  // Warning icon
-        messageEl.style.color = 'var(--color-warning)';
-    } else if (status === 'normal') {
-        statusEl.style.color = 'var(--color-normal)';
-        statusIcon.className = 'fas fa-check-circle';  // Normal icon
-        messageEl.style.color = 'var(--color-normal)';
-    } else {
-        statusEl.style.color = 'var(--color-text-secondary)';
-        statusIcon.className = 'fas fa-question-circle';  // Unknown icon
-        messageEl.style.color = 'var(--color-text-secondary)';
+        statusDesc.textContent = 'Awaiting sensor data...';
     }
 }
 
@@ -436,7 +387,7 @@ function updateReadingsTable(readings) {
     if (!readings || readings.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="4" class="loading">No readings available</td>
+                <td colspan="4" class="table-loading">Receiving sensor data...</td>
             </tr>
         `;
         return;
@@ -450,21 +401,12 @@ function updateReadingsTable(readings) {
         const formattedTime = formatTimestamp(timestamp);
         const status = prediction || 'unknown';
         
-        // Badge class based on status
-        let badgeClass = 'badge-normal';
-        if (status === 'critical') badgeClass = 'badge-critical';
-        else if (status === 'warning') badgeClass = 'badge-warning';
-        
         return `
             <tr>
-                <td>${formattedTime}</td>
-                <td>${temperature !== null ? temperature.toFixed(1) + ' °C' : '--'}</td>
-                <td>${vibration !== null ? vibration.toFixed(2) : '--'}</td>
-                <td>
-                    <span class="badge ${badgeClass}">
-                        ${status ? status.toUpperCase() : '--'}
-                    </span>
-                </td>
+                <td class="col-timestamp">${formattedTime}</td>
+                <td class="col-temp">${temperature !== null ? temperature.toFixed(1) : '--'}</td>
+                <td class="col-vib">${vibration !== null ? vibration.toFixed(2) : '--'}</td>
+                <td class="col-status ${status}">${status ? status.toUpperCase() : '--'}</td>
             </tr>
         `;
     }).join('');
@@ -492,15 +434,18 @@ function initCharts() {
         data: {
             labels: chartLabels,
             datasets: [{
-                label: 'Temperature (°C)',
+                label: 'Temperature',
                 data: chartTemperatures,
-                borderColor: '#f59e0b',
-                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                borderColor: '#F0A030',
+                backgroundColor: 'rgba(240, 160, 48, 0.15)',
                 borderWidth: 2,
                 fill: true,
                 tension: 0.3,
-                pointRadius: 3,
-                pointHoverRadius: 5
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                pointHoverBackgroundColor: '#F0A030',
+                pointHoverBorderColor: '#E8EDF1',
+                pointHoverBorderWidth: 2
             }]
         },
         options: {
@@ -519,12 +464,17 @@ function initCharts() {
             scales: {
                 y: {
                     beginAtZero: false,
-                    title: {
-                        display: true,
-                        text: 'Temperature (°C)'
-                    },
                     grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
+                        color: 'rgba(42, 52, 59, 0.8)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#4A545C',
+                        font: {
+                            family: 'JetBrains Mono',
+                            size: 10
+                        },
+                        padding: 6
                     }
                 },
                 x: {
@@ -532,8 +482,7 @@ function initCharts() {
                         display: false
                     },
                     ticks: {
-                        maxTicksLimit: 10,
-                        maxRotation: 45
+                        display: false
                     }
                 }
             },
@@ -553,13 +502,16 @@ function initCharts() {
             datasets: [{
                 label: 'Vibration',
                 data: chartVibrations,
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderColor: '#4FC3D9',
+                backgroundColor: 'rgba(79, 195, 217, 0.15)',
                 borderWidth: 2,
                 fill: true,
                 tension: 0.3,
-                pointRadius: 3,
-                pointHoverRadius: 5
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                pointHoverBackgroundColor: '#4FC3D9',
+                pointHoverBorderColor: '#E8EDF1',
+                pointHoverBorderWidth: 2
             }]
         },
         options: {
@@ -578,12 +530,17 @@ function initCharts() {
             scales: {
                 y: {
                     beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Vibration'
-                    },
                     grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
+                        color: 'rgba(42, 52, 59, 0.8)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#4A545C',
+                        font: {
+                            family: 'JetBrains Mono',
+                            size: 10
+                        },
+                        padding: 6
                     }
                 },
                 x: {
@@ -591,8 +548,7 @@ function initCharts() {
                         display: false
                     },
                     ticks: {
-                        maxTicksLimit: 10,
-                        maxRotation: 45
+                        display: false
                     }
                 }
             },

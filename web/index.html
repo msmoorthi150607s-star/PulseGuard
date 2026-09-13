@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PULSEGUARD - Machine Health Monitoring</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts: JetBrains Mono + Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Chart.js for charts -->
@@ -15,10 +19,14 @@
     <header class="header">
         <div class="header-content">
             <div class="logo">
-                <div class="logo-icon"><i class="fas fa-bolt"></i></div>
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                </div>
                 <div class="logo-text">
-                    <h1>PULSEGUARD</h1>
-                    <p>Machine Health Monitoring</p>
+                    <span class="logo-title">PULSEGUARD</span>
+                    <span class="logo-subtitle">Machine Health Monitoring</span>
                 </div>
             </div>
             <div class="header-status">
@@ -35,39 +43,48 @@
         <!-- Live Status Section -->
         <section class="section live-status">
             <div class="section-header">
-                <h2>Live Status</h2>
-                <span class="last-updated" id="last-updated">--</span>
+                <div class="section-title-group">
+                    <i class="fas fa-circle status-dot"></i>
+                    <h2>Live Readouts</h2>
+                </div>
+                <span class="timestamp-display" id="last-updated">--</span>
             </div>
             
             <div class="status-cards">
                 <!-- Temperature Card -->
                 <div class="status-card temperature-card">
-                    <div class="card-icon"><i class="fas fa-temperature-high"></i></div>
-                    <div class="card-content">
-                        <span class="card-label">Temperature</span>
-                        <span class="card-value" id="temperature">--</span>
-                        <span class="card-unit">°C</span>
-                    </div>
+                    <div class="readout-icon temp-icon">
+                    <i class="fas fa-temperature-high"></i>
+                </div>
+                <div class="readout-content">
+                    <span class="readout-label">TEMP</span>
+                    <span class="readout-value" id="temperature">--</span>
+                    <span class="readout-unit">°C</span>
+                </div>
                 </div>
                 
                 <!-- Vibration Card -->
                 <div class="status-card vibration-card">
-                    <div class="card-icon"><i class="fas fa-chart-line"></i></div>
-                    <div class="card-content">
-                        <span class="card-label">Vibration</span>
-                        <span class="card-value" id="vibration">--</span>
-                        <span class="card-unit">g</span>
-                    </div>
+                    <div class="readout-icon vib-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="readout-content">
+                    <span class="readout-label">VIB</span>
+                    <span class="readout-value" id="vibration">--</span>
+                    <span class="readout-unit">mm/s</span>
+                </div>
                 </div>
                 
                 <!-- Machine Status Card -->
                 <div class="status-card status-card-large">
-                    <div class="card-icon" id="status-icon"><i class="fas fa-circle"></i></div>
-                    <div class="card-content">
-                        <span class="card-label">Machine Status</span>
-                        <span class="card-value status-value" id="machine-status">--</span>
-                        <p class="status-message" id="status-message">Loading...</p>
-                    </div>
+                    <div class="status-indicator-badge" id="status-badge">
+                    <span class="status-light"></span>
+                    <span class="status-label" id="machine-status">--</span>
+                </div>
+                <div class="status-text">
+                    <span class="status-state-label">MACHINE STATE</span>
+                    <p class="status-description" id="status-message">Awaiting data...</p>
+                </div>
                 </div>
             </div>
         </section>
@@ -75,43 +92,76 @@
         <!-- Charts Section -->
         <section class="section charts-section">
             <div class="section-header">
-                <h2>Live Sensor Data</h2>
+                <div class="section-title-group">
+                    <i class="fas fa-chart-bar"></i>
+                    <h2>Historical Trends</h2>
+                </div>
             </div>
             
             <div class="charts-container">
-                <div class="chart-card temp-chart">
-                    <h3><i class="fas fa-temperature-high"></i> Temperature History</h3>
-                    <canvas id="temperature-chart"></canvas>
+                <div class="chart-panel temp-panel">
+                    <div class="chart-panel-header">
+                        <div class="chart-title">
+                            <i class="fas fa-temperature-high chart-icon-temp"></i>
+                            <span>Temperature</span>
+                        </div>
+                        <div class="chart-legend">
+                            <span class="legend-item">
+                                <span class="legend-line temp-line"></span>
+                                Temp (°C)
+                            </span>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="temperature-chart"></canvas>
+                    </div>
                 </div>
-                <div class="chart-card vib-chart">
-                    <h3><i class="fas fa-chart-line"></i> Vibration History</h3>
-                    <canvas id="vibration-chart"></canvas>
+                <div class="chart-panel vib-panel">
+                    <div class="chart-panel-header">
+                        <div class="chart-title">
+                            <i class="fas fa-chart-line chart-icon-vib"></i>
+                            <span>Vibration</span>
+                        </div>
+                        <div class="chart-legend">
+                            <span class="legend-item">
+                                <span class="legend-line vib-line"></span>
+                                Vibration (mm/s)
+                            </span>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="vibration-chart"></canvas>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Recent Readings Table -->
         <section class="section readings-section">
-            <div class="section-header">
-                <h2>Recent Readings</h2>
-                <button class="btn btn-secondary" id="refresh-btn">
-                    <i class="fas fa-sync-alt"></i> Refresh
+            <div class="section-header readings-header">
+                <div class="section-title-group">
+                    <i class="fas fa-table"></i>
+                    <h2>Recent Readings</h2>
+                </div>
+                <button class="btn btn-refresh" id="refresh-btn">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Refresh</span>
                 </button>
             </div>
             
-            <div class="table-container">
+            <div class="table-panel">
                 <table class="readings-table">
                     <thead>
                         <tr>
-                            <th>Timestamp</th>
-                            <th>Temperature</th>
-                            <th>Vibration</th>
-                            <th>Prediction</th>
+                            <th class="col-timestamp">Timestamp</th>
+                            <th class="col-temp">Temp (°C)</th>
+                            <th class="col-vib">Vibration</th>
+                            <th class="col-status">Status</th>
                         </tr>
                     </thead>
                     <tbody id="readings-table-body">
                         <tr>
-                            <td colspan="4" class="loading">Loading readings...</td>
+                            <td colspan="4" class="table-loading">Receiving sensor data...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -122,10 +172,10 @@
         <section class="section maintenance-alert" id="maintenance-alert" style="display: none;">
             <div class="alert-content">
                 <div class="alert-icon" id="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
-                <div class="alert-text">
-                    <h3>Maintenance Alert</h3>
-                    <p id="alert-message"></p>
-                </div>
+        <div class="alert-text">
+            <span class="alert-title">CRITICAL ALERT</span>
+            <p class="alert-message" id="alert-message"></p>
+        </div>
                 <button class="btn btn-close" id="alert-close"><i class="fas fa-times"></i></button>
             </div>
         </section>
