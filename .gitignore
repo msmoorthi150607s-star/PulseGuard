@@ -68,6 +68,11 @@ credentials/
 instance/
 .webassets-cache
 
+# Setup scripts
+flask_api/config/*.bat
+flask_api/config/*.ps1
+flask_api/config/README.md
+
 # Node.js (if using)
 node_modules/
 npm-debug.log*
@@ -86,9 +91,10 @@ htmlcov/
 # ML Model (if using Git LFS instead)
 # model.pkl
 
-# Data files (if sensitive or large)
-data/*.json
-data/*.csv
+# Data files (exported from Firebase - optional to commit)
+# Uncomment if you want to exclude data
+# data/*.json
+# data/*.csv
 
 # Esp32 secrets
 esp32/secrets.h

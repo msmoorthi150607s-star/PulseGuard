@@ -2,23 +2,27 @@
 """
 PulseGuard ML Training Pipeline
 
-This module handles:
-1. Data loading from Firebase or local JSON
-2. Exploratory Data Analysis (EDA)
-3. Feature engineering
-4. Model training (when labels available)
-5. Model evaluation
-6. Model persistence
+IMPORTANT DISCLAIMER:
+======================
+This model was trained on RULE-GENERATED labels, not human-labeled data.
+The reported 100% accuracy is accuracy against rule-generated labels,
+NOT proof of real-world predictive accuracy.
 
-CURRENT STATUS:
-- Dataset has NO labels (normal/warning/critical)
-- Supervised ML cannot be trained without labels
-- Implemented: Rule-based baseline for demo
-- Ready: ML pipeline for when labelled data becomes available
+This means:
+- The model learned to replicate the rules used to create labels
+- It does NOT validate that these rules correctly identify machine conditions
+- Real predictive accuracy requires human-labeled training data
 
-For the demo, we use a transparent rule-based system:
+Current Status:
+- Dataset has NO human labels (normal/warning/critical)
+- Labels were generated using rule-based thresholds
+- Supervised ML can only learn these rules, not validate them
+- Implemented: ML pipeline with rule-based baseline
+- Ready: ML pipeline for when REAL labelled data becomes available
+
+Rule-Based Thresholds Used for Label Generation:
 - NORMAL: temperature < 38°C AND vibration < 2.0
-- WARNING: temperature 38-40°C OR vibration 2.0-5.0
+- WARNING: (temperature 38-40°C) OR (vibration 2.0-5.0)
 - CRITICAL: temperature > 40°C OR vibration > 5.0
 
 These thresholds can be adjusted based on domain knowledge.
@@ -434,6 +438,8 @@ def run_training_pipeline(use_firebase: bool = False, firebase_url: str = ""):
         logger.warning("Dataset too small for reliable ML training.")
         logger.warning("Using rule-based baseline for demo.")
         logger.warning("ML pipeline is ready for when more labeled data becomes available.")
+        logger.warning("NOTE: Labels are rule-generated, not human-validated.")
+        logger.warning("100% accuracy means model learned rules, not that rules are correct.")
         
         # Save a placeholder model info
         model_info = {

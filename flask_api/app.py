@@ -25,6 +25,8 @@ License: MIT
 
 import os
 import logging
+import threading
+import time
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 from flask import (
@@ -59,6 +61,12 @@ firebase_service: FirebaseService = None
 model_service: ModelService = None
 email_service: EmailService = None
 
+# Background polling control
+_polling_thread = None
+_stop_polling = threading.Event()
+_last_processed_timestamp = 0
+_polling_interval = int(os.getenv('POLLING_INTERVAL_SECONDS', '10'))  # Check every 10 seconds
+
 
 def initialize_services():
     """Initialize all services."""
@@ -71,6 +79,143 @@ def initialize_services():
     email_service = get_email_service()
     
     logger.info("All services initialized")
+
+
+def start_background_polling():
+    """
+    Start background thread that polls Firebase for new readings
+    and automatically generates predictions.
+    
+    This enables the LIVE/automatic prediction flow:
+    ESP32 → Firebase /readings_only → Flask polls → model inference → /prediction
+    """
+    global _polling_thread, _stop_polling
+    
+    logger.info(f"Starting background polling (interval: {_polling_interval}s)")
+    
+    def polling_loop():
+        """Background polling loop."""
+        global _last_processed_timestamp
+        
+        logger.info("Background polling thread started")
+        
+        while not _stop_polling.is_set():
+            try:
+                # Get latest reading from Firebase
+                latest_reading = firebase_service.get_latest_reading()
+                
+                if latest_reading:
+                    current_timestamp = latest_reading.get('timestamp', 0)
+                    
+                    # Check if this is a new reading we haven't processed
+                    if current_timestamp > _last_processed_timestamp:
+                        logger.info("=" * 60)
+                        logger.info("NEW READING DETECTED - Running automatic prediction")
+                        logger.info("=" * 60)
+                        
+                        # Log the reading
+                        temp = latest_reading.get('temperature')
+                        vib = latest_reading.get('vibration')
+                        ts = latest_reading.get('timestamp')
+                        record_id = latest_reading.get('record_id')
+                        
+                        logger.info(f"Latest reading received:")
+                        logger.info(f"  Record ID: {record_id}")
+                        logger.info(f"  Temperature: {temp}°C")
+                        logger.info(f"  Vibration: {vib}")
+                        logger.info(f"  Timestamp: {ts}")
+                        
+                        # Run model inference
+                        logger.info("Running model inference...")
+                        prediction_result = model_service.predict(temp, vib)
+                        
+                        # Log prediction result
+                        predicted_condition = prediction_result['prediction']
+                        logger.info(f"Predicted condition: {predicted_condition.upper()}")
+                        logger.info(f"Method: {prediction_result.get('method', 'unknown')}")
+                        logger.info(f"Confidence: {prediction_result.get('confidence', 0):.2f}")
+                        
+                        # Generate prediction ID and timestamp
+                        prediction_id = f"pred_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
+                        prediction_timestamp = int(datetime.now().timestamp() * 1000)
+                        
+                        # Prepare prediction record
+                        prediction_record = {
+                            'prediction_id': prediction_id,
+                            'record_id': record_id,
+                            'prediction': predicted_condition,
+                            'temperature': temp,
+                            'vibration': vib,
+                            'timestamp': prediction_timestamp,
+                            'message': prediction_result.get('message', ''),
+                            'method': prediction_result.get('method', 'unknown'),
+                            'confidence': prediction_result.get('confidence', 0),
+                            'auto_generated': True,
+                            'source_reading_timestamp': ts
+                        }
+                        
+                        # Save prediction to Firebase
+                        logger.info("Writing prediction to Firebase /prediction...")
+                        saved = firebase_service.save_prediction(prediction_record)
+                        
+                        if saved:
+                            logger.info(f"Prediction saved to Firebase: {prediction_id}")
+                        else:
+                            logger.warning("Failed to save prediction to Firebase")
+                        
+                        # Send email for critical conditions
+                        if predicted_condition == 'critical':
+                            logger.info("CRITICAL condition detected - sending email alert...")
+                            email_result = email_service.send_critical_alert(temp, vib, 'critical')
+                            
+                            if email_result.get('success'):
+                                logger.info("Email alert sent successfully")
+                            else:
+                                logger.warning(f"Email alert failed: {email_result.get('message')}")
+                        
+                        # Update last processed timestamp
+                        _last_processed_timestamp = current_timestamp
+                        
+                        logger.info("=" * 60)
+                        logger.info("Automatic prediction complete")
+                        logger.info("=" * 60)
+                    else:
+                        # Log that we're up to date
+                        if int(time.time() * 1000) % 60 == 0:  # Log once per minute
+                            logger.debug(f"No new readings (last processed: {_last_processed_timestamp})")
+                else:
+                    logger.debug("No readings found in Firebase")
+                
+            except Exception as e:
+                logger.error(f"Error in background polling: {e}")
+            
+            # Sleep until next poll
+            _stop_polling.wait(_polling_interval)
+        
+        logger.info("Background polling thread stopped")
+    
+    # Start the polling thread
+    _polling_thread = threading.Thread(
+        target=polling_loop,
+        daemon=True,
+        name='pulseguard-polling'
+    )
+    _polling_thread.start()
+    
+    logger.info("Background polling thread launched")
+
+
+def stop_background_polling():
+    """Stop the background polling thread."""
+    global _stop_polling
+    
+    logger.info("Stopping background polling...")
+    _stop_polling.set()
+    
+    if _polling_thread and _polling_thread.is_alive():
+        _polling_thread.join(timeout=5)
+    
+    logger.info("Background polling stopped")
 
 
 def add_cors_headers(response):
@@ -384,6 +529,22 @@ def get_model_info():
         }), 500
 
 
+@app.route('/api/polling-status', methods=['GET'])
+def get_polling_status():
+    """
+    Get background polling status.
+    
+    Returns:
+        Polling status information
+    """
+    return jsonify({
+        'running': _polling_thread is not None and _polling_thread.is_alive(),
+        'interval_seconds': _polling_interval,
+        'last_processed_timestamp': _last_processed_timestamp,
+        'thread_name': _polling_thread.name if _polling_thread else None
+    })
+
+
 @app.route('/api/test-email', methods=['POST'])
 def test_email():
     """
@@ -552,6 +713,13 @@ def internal_error(error):
 
 # Initialize services when app starts
 initialize_services()
+
+# Start background polling for automatic predictions
+start_background_polling()
+
+# Register cleanup on shutdown
+import atexit
+atexit.register(stop_background_polling)
 
 
 if __name__ == '__main__':

@@ -438,7 +438,7 @@ GET /api/prediction
 }
 ```
 
-#### Make Prediction
+#### Make Prediction (Manual)
 ```
 POST /api/predict
 Content-Type: application/json
@@ -447,6 +447,23 @@ Content-Type: application/json
   "temperature": 36.5,
   "vibration": 0.42,
   "record_id": "optional-id"
+}
+```
+
+**Note:** This endpoint is for manual predictions. The system also performs **automatic predictions** via background polling when new readings arrive in Firebase.
+
+#### Polling Status
+```
+GET /api/polling-status
+```
+
+Returns background polling status:
+```json
+{
+  "running": true,
+  "interval_seconds": 10,
+  "last_processed_timestamp": 1725600060000,
+  "thread_name": "pulseguard-polling"
 }
 ```
 **Response:**
@@ -600,8 +617,83 @@ The training pipeline (`train_model.py`) includes:
 - ✅ Cross-validation
 - ✅ Model comparison
 - ✅ Model evaluation (accuracy, precision, recall, F1)
+- ✅ Model evaluation (accuracy, precision, recall, F1)
 - ✅ Model persistence
 - ✅ Reproducible training process
+
+### ⚠️ Important: What 100% Accuracy Means
+
+**The current model reports 100% accuracy, but this does NOT mean:**
+
+- ❌ The model predicts real machine failures with 100% accuracy
+- ❌ The rules used for labeling are validated as correct
+- ❌ The model will work accurately in production
+
+**What 100% accuracy actually means:**
+
+- ✅ The model learned to replicate the rule-based labeling perfectly
+- ✅ The model correctly identifies which rule-generated label applies
+- ✅ The model is consistent with the threshold rules
+
+**Why this happened:**
+
+1. Dataset had NO human labels (no real normal/warning/critical labels)
+2. Labels were generated using rule-based thresholds
+3. ML model trained on these rule-generated labels
+4. Model learned to reproduce the rules (essentially memorizing them)
+
+**This is expected behavior** when training on rule-generated labels without real validation data.
+
+**To get real predictive accuracy:**
+
+1. Collect data with known machine conditions (human-labeled)
+2. Include actual failure events with confirmed timestamps
+3. Work with maintenance team to validate labels
+4. Retrain model on validated labels
+5. Test on held-out real failure data
+
+**Current model is suitable for:**
+- ✅ College demonstration
+- ✅ Proof of concept
+- ✅ Learning ML pipeline
+- ❌ Production deployment without validation
+
+### ⚠️ Important: What 100% Accuracy Means
+
+**The current model reports 100% accuracy, but this does NOT mean:**
+
+- ❌ The model predicts real machine failures with 100% accuracy
+- ❌ The rules used for labeling are validated as correct
+- ❌ The model will work accurately in production
+
+**What 100% accuracy actually means:**
+
+- ✅ The model learned to replicate the rule-based labeling perfectly
+- ✅ The model correctly identifies which rule-generated label applies
+- ✅ The model is consistent with the threshold rules
+
+**Why this happened:**
+
+1. Dataset had NO human labels (no real normal/warning/critical labels)
+2. Labels were generated using rule-based thresholds
+3. ML model trained on these rule-generated labels
+4. Model learned to reproduce the rules (essentially memorizing them)
+
+**This is expected behavior** when training on rule-generated labels without real validation data.
+
+**To get real predictive accuracy:**
+
+1. Collect data with known machine conditions (human-labeled)
+2. Include actual failure events with confirmed timestamps
+3. Work with maintenance team to validate labels
+4. Retrain model on validated labels
+5. Test on held-out real failure data
+
+**Current model is suitable for:**
+- ✅ College demonstration
+- ✅ Proof of concept
+- ✅ Learning ML pipeline
+- ❌ Production deployment without validation
 
 ---
 
