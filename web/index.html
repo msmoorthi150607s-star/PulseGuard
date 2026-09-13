@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PULSEGUARD - Machine Health Monitoring</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Chart.js for charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -13,7 +15,7 @@
     <header class="header">
         <div class="header-content">
             <div class="logo">
-                <div class="logo-icon">⚡</div>
+                <div class="logo-icon"><i class="fas fa-bolt"></i></div>
                 <div class="logo-text">
                     <h1>PULSEGUARD</h1>
                     <p>Machine Health Monitoring</p>
@@ -40,7 +42,7 @@
             <div class="status-cards">
                 <!-- Temperature Card -->
                 <div class="status-card temperature-card">
-                    <div class="card-icon">🌡️</div>
+                    <div class="card-icon"><i class="fas fa-temperature-high"></i></div>
                     <div class="card-content">
                         <span class="card-label">Temperature</span>
                         <span class="card-value" id="temperature">--</span>
@@ -50,7 +52,7 @@
                 
                 <!-- Vibration Card -->
                 <div class="status-card vibration-card">
-                    <div class="card-icon">📊</div>
+                    <div class="card-icon"><i class="fas fa-chart-line"></i></div>
                     <div class="card-content">
                         <span class="card-label">Vibration</span>
                         <span class="card-value" id="vibration">--</span>
@@ -60,7 +62,7 @@
                 
                 <!-- Machine Status Card -->
                 <div class="status-card status-card-large">
-                    <div class="card-icon" id="status-icon">🔍</div>
+                    <div class="card-icon" id="status-icon"><i class="fas fa-circle"></i></div>
                     <div class="card-content">
                         <span class="card-label">Machine Status</span>
                         <span class="card-value status-value" id="machine-status">--</span>
@@ -93,7 +95,7 @@
             <div class="section-header">
                 <h2>Recent Readings</h2>
                 <button class="btn btn-secondary" id="refresh-btn">
-                    🔄 Refresh
+                    <i class="fas fa-sync-alt"></i> Refresh
                 </button>
             </div>
             
@@ -119,12 +121,12 @@
         <!-- Maintenance Status Alert -->
         <section class="section maintenance-alert" id="maintenance-alert" style="display: none;">
             <div class="alert-content">
-                <div class="alert-icon" id="alert-icon">⚠️</div>
+                <div class="alert-icon" id="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
                 <div class="alert-text">
                     <h3>Maintenance Alert</h3>
                     <p id="alert-message"></p>
                 </div>
-                <button class="btn btn-close" id="alert-close">×</button>
+                <button class="btn btn-close" id="alert-close"><i class="fas fa-times"></i></button>
             </div>
         </section>
     </main>

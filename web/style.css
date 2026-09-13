@@ -107,6 +107,8 @@ h3 { font-size: 1.25rem; }
     display: flex;
     align-items: center;
     justify-content: center;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .logo-text h1 {
@@ -266,10 +268,29 @@ h3 { font-size: 1.25rem; }
 /* Status-specific colors */
 .temperature-card .card-icon {
     background: var(--color-warning-bg);
+    color: var(--color-warning);
 }
 
 .vibration-card .card-icon {
     background: #dbeafe;
+    color: #3b82f6;
+}
+
+#status-icon {
+    color: var(--color-text-secondary);
+    font-size: 1.5rem;
+}
+
+#status-icon.normal {
+    color: var(--color-normal);
+}
+
+#status-icon.warning {
+    color: var(--color-warning);
+}
+
+#status-icon.critical {
+    color: var(--color-critical);
 }
 
 /* ============================================
@@ -408,10 +429,20 @@ h3 { font-size: 1.25rem; }
     background: var(--color-background);
     color: var(--color-text);
     border: 1px solid var(--color-border);
+    transition: all var(--transition-fast);
 }
 
 .btn-secondary:hover {
     background: var(--color-border);
+    color: var(--color-primary);
+}
+
+.btn-secondary i {
+    transition: transform 0.3s ease;
+}
+
+.btn-secondary:hover i {
+    transform: rotate(180deg);
 }
 
 .btn-close {
@@ -463,6 +494,7 @@ h3 { font-size: 1.25rem; }
 .alert-icon {
     font-size: 2rem;
     animation: pulse 1s infinite;
+    color: var(--color-critical);
 }
 
 .alert-text {

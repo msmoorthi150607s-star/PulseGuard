@@ -79,11 +79,11 @@ function showAlert(message, type = 'critical') {
     alertMessage.textContent = message;
     
     if (type === 'critical') {
-        alertIcon.textContent = '🚨';
+        alertIcon.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
         alert.style.borderColor = 'var(--color-critical)';
         alert.style.background = 'var(--color-critical-bg)';
     } else if (type === 'warning') {
-        alertIcon.textContent = '⚠️';
+        alertIcon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
         alert.style.borderColor = 'var(--color-warning)';
         alert.style.background = 'var(--color-warning-bg)';
     }
@@ -182,21 +182,24 @@ function updateMachineStatus(prediction, message, shortMessage) {
     }
     
     // Update icon and color based on status
+    // Reset icon class first
+    statusIcon.className = 'fas fa-circle';  // Default
+    
     if (status === 'critical') {
         statusEl.style.color = 'var(--color-critical)';
-        statusIcon.textContent = '🚨';
+        statusIcon.className = 'fas fa-exclamation-circle';  // Critical icon
         messageEl.style.color = 'var(--color-critical)';
     } else if (status === 'warning') {
         statusEl.style.color = 'var(--color-warning)';
-        statusIcon.textContent = '⚠️';
+        statusIcon.className = 'fas fa-exclamation-triangle';  // Warning icon
         messageEl.style.color = 'var(--color-warning)';
     } else if (status === 'normal') {
         statusEl.style.color = 'var(--color-normal)';
-        statusIcon.textContent = '✅';
+        statusIcon.className = 'fas fa-check-circle';  // Normal icon
         messageEl.style.color = 'var(--color-normal)';
     } else {
         statusEl.style.color = 'var(--color-text-secondary)';
-        statusIcon.textContent = '🔍';
+        statusIcon.className = 'fas fa-question-circle';  // Unknown icon
         messageEl.style.color = 'var(--color-text-secondary)';
     }
 }
@@ -658,12 +661,12 @@ async function initDashboard() {
     const refreshBtn = document.getElementById('refresh-btn');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', async () => {
-            refreshBtn.textContent = '⏳ Loading...';
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
             refreshBtn.disabled = true;
             
             await refreshData();
             
-            refreshBtn.textContent = '🔄 Refresh';
+            refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
             refreshBtn.disabled = false;
         });
     }
