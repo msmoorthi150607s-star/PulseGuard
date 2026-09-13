@@ -92,19 +92,45 @@ function hideAlert() {
 /**
  * Update status indicator
  */
+// Data freshness window: a reading counts as 'live' if newer than this.
+// ESP32 sends every ~5s, so 30s gives plenty of margin.
+const LIVE_DATA_WINDOW_MS = 30000;
+
+/**
+ * Update the header indicator based on DATA FRESHNESS, not just API reachability:
+ *   LIVE           (green, pulsing) - newest reading within the last 30s
+ *   DATA <age> OLD (amber)          - API works, device stopped sending
+ *   NO DATA        (dim)            - API works, nothing in Firebase yet
+ *   OFFLINE        (dim)            - Flask API unreachable
+ */
 function updateApiStatus(connected) {
-    const statusSection = document.querySelector('.header-status');
-    const statusDot = statusSection?.querySelector('.status-dot');
-    const statusText = statusSection?.querySelector('.status-text');
+    const statusDot = document.querySelector('.header-status .status-dot');
+    const statusText = document.querySelector('.header-status .status-text');
     
     if (!statusDot || !statusText) return;
     
-    if (connected) {
+    statusDot.classList.remove('connected', 'stale');
+    
+    if (!connected) {
+        statusText.textContent = 'OFFLINE';
+        return;
+    }
+    
+    const latestTs = lastReading?.timestamp || lastPrediction?.timestamp || 0;
+    const age = Date.now() - latestTs;
+    
+    if (latestTs > 0 && age <= LIVE_DATA_WINDOW_MS) {
         statusDot.classList.add('connected');
         statusText.textContent = 'LIVE';
+    } else if (latestTs > 0) {
+        statusDot.classList.add('stale');
+        const mins = Math.max(1, Math.floor(age / 60000));
+        const ageLabel = mins >= 60
+            ? `${Math.floor(mins / 60)}h ${mins % 60}m`
+            : `${mins}m`;
+        statusText.textContent = `DATA ${ageLabel} OLD`;
     } else {
-        statusDot.classList.remove('connected');
-        statusText.textContent = 'OFFLINE';
+        statusText.textContent = 'NO DATA';
     }
 }
 

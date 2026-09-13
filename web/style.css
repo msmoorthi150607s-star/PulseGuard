@@ -172,12 +172,20 @@ body {
     border-radius: 50%;
     background: var(--text-muted);
     box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    transition: background var(--transition-normal), box-shadow var(--transition-normal);
 }
 
+/* Live: data flowing recently */
 .status-dot.connected {
-    background: var(--accent-system);
+    background: var(--status-normal);
     box-shadow: 0 0 8px var(--status-normal-glow);
     animation: pulse-live 2s ease-in-out infinite;
+}
+
+/* API reachable but data stale (device stopped sending) */
+.status-dot.stale {
+    background: var(--status-warning);
+    box-shadow: 0 0 8px var(--status-warning-glow);
 }
 
 .status-text {
@@ -189,7 +197,11 @@ body {
 }
 
 .status-dot.connected + .status-text {
-    color: var(--accent-system);
+    color: var(--status-normal);
+}
+
+.status-dot.stale + .status-text {
+    color: var(--status-warning);
 }
 
 /* Main Content */
