@@ -13,10 +13,10 @@
 // Configuration
 // ============================================
 
-// API configuration - change this to your Flask API URL
-const API_BASE_URL = '';  // Empty string for relative URLs (same server)
-                          // Or use: 'http://localhost:5000' for local Flask API
-                          // Or use: 'https://your-domain.com' for production
+// API configuration - Flask API server address
+// Default: Flask runs on port 5000, dashboard on port 8000
+const API_BASE_URL = 'http://localhost:5000';  // Flask API
+                          // Use '' only if dashboard is served BY Flask itself
 
 // Refresh interval in milliseconds
 const REFRESH_INTERVAL = 5000;  // 5 seconds
