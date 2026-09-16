@@ -125,6 +125,11 @@ def initialize_services():
     export_service = get_export_service()
     report_service = get_report_service()
 
+    # Enable runtime email settings from the Admin dashboard
+    # (stored in Firebase settings/email; .env values are the defaults)
+    email_service.bind_firebase(firebase_service)
+    email_service.reload_overrides()
+
     logger.info("All services initialized")
 
 
@@ -1217,6 +1222,116 @@ def technical_reports(user):
 
 
 # ============================================================
+# Email settings (Admin 'Set Up Your Mails')
+# ============================================================
+@app.route('/api/settings/email', methods=['GET'])
+@require_auth('admin')
+def get_email_settings(user):
+    """
+    Get current email settings for the Admin panel.
+    The password is NEVER returned - only whether one is set.
+    """
+    stored = firebase_service.get_email_settings() or {}
+    password_set = bool(stored.get('password') or os.getenv('MAIL_PASSWORD'))
+    return jsonify({
+        'smtp_server': stored.get('smtp_server', os.getenv('SMTP_SERVER', 'smtp.gmail.com')),
+        'smtp_port': stored.get('smtp_port', os.getenv('SMTP_PORT', '587')),
+        'username': stored.get('username', os.getenv('MAIL_USERNAME', '')),
+        'sender': stored.get('sender', os.getenv('MAIL_SENDER', '')),
+        'recipient': stored.get('recipient', os.getenv('MAIL_RECIPIENT', '')),
+        'tech_recipient': stored.get('tech_recipient', os.getenv('MAIL_TECH_RECIPIENT', '')),
+        'dashboard_url': stored.get('dashboard_url', os.getenv('DASHBOARD_URL', 'http://localhost:8000')),
+        'password_set': password_set,
+        'source': 'firebase' if stored else 'env',
+        'configured': password_set and bool(
+            stored.get('username') or os.getenv('MAIL_USERNAME')
+        )
+    })
+
+
+@app.route('/api/settings/email', methods=['POST'])
+@require_auth('admin')
+def save_email_settings(user):
+    """
+    Save email settings from the Admin panel.
+
+    Body (all optional, blanks keep current values):
+        smtp_server, smtp_port, username, password, sender,
+        recipient, tech_recipient, dashboard_url
+
+    Values are stored in Firebase settings/email and take effect
+    immediately (no Flask restart needed). The .env file is not touched.
+    """
+    data = request.get_json() or {}
+
+    # Basic validation
+    if data.get('smtp_port') not in (None, ''):
+        try:
+            port = int(data['smtp_port'])
+            if not (1 <= port <= 65535):
+                raise ValueError
+        except (TypeError, ValueError):
+            return jsonify({
+                'error': 'Invalid port',
+                'message': 'SMTP port must be a number between 1 and 65535'
+            }), 400
+
+    for field in ('username', 'recipient', 'tech_recipient', 'sender'):
+        value = data.get(field)
+        if value and ('@' not in str(value) or ' ' in str(value)):
+            return jsonify({
+                'error': 'Invalid email',
+                'message': f'"{field}" must be a valid email address'
+            }), 400
+
+    # Merge with previously stored settings so blanks don't erase values
+    existing = firebase_service.get_email_settings() or {}
+    allowed = ['smtp_server', 'smtp_port', 'username', 'password',
+               'sender', 'recipient', 'tech_recipient', 'dashboard_url']
+    merged = dict(existing)
+    for field in allowed:
+        value = data.get(field)
+        if value not in (None, ''):
+            merged[field] = str(value).strip()
+
+    if not firebase_service.save_email_settings(merged):
+        return jsonify({
+            'error': 'Save failed',
+            'message': 'Could not write settings to Firebase'
+        }), 500
+
+    # Apply immediately
+    email_service.apply_overrides(merged)
+
+    return jsonify({
+        'success': True,
+        'message': 'Email settings saved and applied. No restart needed.',
+        'password_set': bool(merged.get('password'))
+    })
+
+
+@app.route('/api/settings/email/test', methods=['POST'])
+@require_auth('admin')
+def test_email_settings(user):
+    """
+    Verify the saved SMTP configuration by logging in to the server,
+    optionally sending a real test email (body: {send: true}).
+    """
+    data = request.get_json() or {}
+
+    if data.get('send'):
+        email_service.reload_overrides()
+        subject = "[PULSEGUARD] Email test"
+        body = ("Your PulseGuard email settings work.\n\n"
+                f"Tested at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+                "---\nPulseGuard Machine Health Monitoring System")
+        result = email_service._send(subject, body, [email_service.recipient])
+        return jsonify(result)
+
+    return jsonify(email_service.test_connection())
+
+
+# ============================================================
 # Secured generated-file downloads (exports & reports only)
 # ============================================================
 _ALLOWED_EXPORT_DIRS = [
@@ -1294,6 +1409,9 @@ def root():
             'POST /api/maintenance-reports': 'Create report (technical)',
             'GET  /api/reports/admin': 'Admin PDF/Excel (admin)',
             'GET  /api/reports/technical': 'Technical PDF/Excel (technical)',
+            'GET  /api/settings/email': 'View email settings (admin)',
+            'POST /api/settings/email': 'Save email settings (admin)',
+            'POST /api/settings/email/test': 'Test email settings (admin)',
             'POST /api/test-email': 'Test email config',
             'POST /api/webhook': 'ESP32 direct ingestion (optional)'
         },

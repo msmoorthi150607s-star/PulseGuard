@@ -102,6 +102,7 @@ class FirebaseService:
         self.users_path = "users"
         self.service_requests_path = "service_requests"
         self.maintenance_reports_path = "maintenance_reports"
+        self.settings_path = "settings"
         logger.info(f"Firebase service initialized with URL: {self.base_url}")
 
     # ------------------------------------------------------------
@@ -447,6 +448,30 @@ class FirebaseService:
             if len(result) >= limit:
                 break
         return result
+
+    # ------------------------------------------------------------
+    # Email settings (configured from the Admin dashboard)
+    # ------------------------------------------------------------
+    def get_email_settings(self) -> Optional[Dict]:
+        """Get admin-configured email settings (settings/email node)."""
+        data = self._get(f"{self.settings_path}/email")
+        return dict(data) if isinstance(data, dict) else None
+
+    def save_email_settings(self, settings: Dict) -> bool:
+        """Save admin-configured email settings."""
+        return self._put(f"{self.settings_path}/email", settings)
+
+    def delete_email_settings(self) -> bool:
+        """Clear stored email settings (falls back to .env values)."""
+        try:
+            response = requests.delete(
+                f"{self.base_url}{self.settings_path}/email.json", timeout=15
+            )
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Firebase DELETE settings/email failed: {e}")
+            return False
 
 
 # Singleton instance

@@ -46,8 +46,11 @@ _last_alert_status: Optional[str] = None
 class EmailService:
     """Service class for email notifications."""
 
+    # Set via bind_firebase(); enables runtime overrides from Firebase
+    firebase_ref = None
+
     def __init__(self):
-        """Initialize email service."""
+        """Initialize email service with .env defaults."""
         self.smtp_server = SMTP_SERVER
         self.smtp_port = SMTP_PORT
         self.username = MAIL_USERNAME
@@ -57,6 +60,7 @@ class EmailService:
         self.sender = MAIL_SENDER
         self.cooldown_seconds = ALERT_COOLDOWN_SECONDS
         self.dashboard_url = DASHBOARD_URL
+        self._overrides_applied = False
 
         logger.info("Email service initialized")
         logger.info(f"SMTP Server: {self.smtp_server}:{self.smtp_port}")
@@ -67,9 +71,64 @@ class EmailService:
 
         if not self.username or not self.password or not self.recipient:
             logger.warning(
-                "Email not fully configured. Set MAIL_USERNAME, "
-                "MAIL_PASSWORD, and MAIL_RECIPIENT."
+                "Email not configured yet. Set it in the Admin dashboard "
+                "('Set Up Your Mails') or in flask_api/.env."
             )
+
+    # ------------------------------------------------------------
+    # Runtime overrides (Admin dashboard 'Set Up Your Mails')
+    # ------------------------------------------------------------
+    def apply_overrides(self, settings: Dict) -> None:
+        """
+        Apply runtime email settings saved by the Admin.
+
+        Accepted keys: smtp_server, smtp_port, username, password,
+        recipient (owner), tech_recipient, sender, dashboard_url.
+        Empty/missing keys keep the current value (which may come from .env).
+        """
+        if not isinstance(settings, dict):
+            return
+        mapping = {
+            'smtp_server': ('smtp_server', str),
+            'smtp_port': ('smtp_port', int),
+            'username': ('username', str),
+            'password': ('password', str),
+            'recipient': ('recipient', str),
+            'tech_recipient': ('tech_recipient', str),
+            'sender': ('sender', str),
+            'dashboard_url': ('dashboard_url', str),
+        }
+        for key, (attr, cast) in mapping.items():
+            value = settings.get(key)
+            if value is None or value == '':
+                continue
+            try:
+                setattr(self, attr, cast(value))
+            except (TypeError, ValueError):
+                logger.warning(f"Ignoring invalid email setting {key}")
+        self._overrides_applied = True
+        # Keep sender consistent with username unless a custom sender is set
+        if not settings.get('sender'):
+            self.sender = self.username
+        logger.info(
+            "Email overrides applied from Admin settings "
+            f"(sender={self.sender}, owner={self.recipient})"
+        )
+
+    def reload_overrides(self) -> bool:
+        """Re-read overrides from Firebase (call before sending)."""
+        try:
+            settings = self.firebase_ref.get_email_settings() if self.firebase_ref else None
+            if settings:
+                self.apply_overrides(settings)
+                return True
+        except Exception as e:
+            logger.warning(f"Could not load email overrides: {e}")
+        return False
+
+    def bind_firebase(self, firebase_service) -> None:
+        """Give the email service access to stored settings."""
+        self.firebase_ref = firebase_service
 
     # ------------------------------------------------------------
     # Internal send helper
@@ -166,6 +225,9 @@ class EmailService:
         """Send a CRITICAL condition alert to admin + technical team."""
         global _last_alert_time, _last_alert_status
 
+        # Pick up any settings the Admin changed since the last send
+        self.reload_overrides()
+
         if not self.can_send_alert(status):
             return {
                 'success': False,
@@ -209,6 +271,9 @@ This is an automated message from PulseGuard Machine Health Monitoring System.
         Notify the Admin/Owner that the Technical Team accepted their
         service request. Includes a tracking link.
         """
+        # Pick up any settings the Admin changed since the last send
+        self.reload_overrides()
+
         request_id = request.get('request_id', '')
         machine_id = request.get('machine_id', 'Unknown machine')
         issue = request.get('issue', 'Not specified')
@@ -244,6 +309,7 @@ This is an automated message from PulseGuard Machine Health Monitoring System.
     # ------------------------------------------------------------
     def test_connection(self) -> Dict[str, Any]:
         """Test SMTP configuration without sending an email."""
+        self.reload_overrides()
         if not all([self.username, self.password]):
             return {
                 'success': False,

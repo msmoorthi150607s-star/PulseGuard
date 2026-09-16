@@ -21,6 +21,11 @@ function initAdmin() {
     document.getElementById('request-service-btn').addEventListener('click', requestService);
     document.getElementById('admin-report-btn').addEventListener('click', generateReport);
 
+    document.getElementById('email-form').addEventListener('submit', saveEmailSettings);
+    document.getElementById('email-verify-btn').addEventListener('click', () => testEmail(false));
+    document.getElementById('email-sendtest-btn').addEventListener('click', () => testEmail(true));
+    loadEmailSettings();
+
     refreshAll();
     setInterval(refreshAll, 10000);
 }
@@ -227,5 +232,100 @@ async function generateReport() {
         msg.className = 'msg-banner err';
     } finally {
         btn.disabled = false;
+    }
+}
+
+// ------------------------------------------------------------
+// Email settings (Set Up Your Mails)
+// ------------------------------------------------------------
+async function loadEmailSettings() {
+    try {
+        const s = await pgFetch('/api/settings/email');
+        document.getElementById('es-username').value = s.username || '';
+        document.getElementById('es-recipient').value = s.recipient || '';
+        document.getElementById('es-tech').value = s.tech_recipient || '';
+        document.getElementById('es-server').value = s.smtp_server || 'smtp.gmail.com';
+        document.getElementById('es-port').value = s.smtp_port || 587;
+
+        const hint = document.getElementById('es-password-hint');
+        hint.textContent = s.password_set
+            ? 'A password is saved. Leave blank to keep it.'
+            : 'Required before alerts can be sent.';
+    } catch (err) {
+        console.error('Could not load email settings:', err.message);
+    }
+}
+
+async function saveEmailSettings(e) {
+    e.preventDefault();
+    const msg = document.getElementById('email-msg');
+    msg.className = 'msg-banner';
+
+    // Only send filled fields - blanks keep stored values server-side
+    const payload = {};
+    const fields = {
+        username: 'es-username',
+        recipient: 'es-recipient',
+        tech_recipient: 'es-tech',
+        smtp_server: 'es-server',
+        smtp_port: 'es-port'
+    };
+    for (const [key, id] of Object.entries(fields)) {
+        const v = document.getElementById(id).value.trim();
+        if (v) payload[key] = v;
+    }
+    const pw = document.getElementById('es-password').value.trim();
+    if (pw) payload.password = pw;
+
+    if (!payload.username) {
+        msg.textContent = 'Enter the Gmail / sender account.';
+        msg.className = 'msg-banner err';
+        return;
+    }
+    if (!payload.password && !document.getElementById('es-password-hint')
+            .textContent.includes('A password is saved')) {
+        msg.textContent = 'Enter the App Password (or the saved one is kept automatically).';
+        msg.className = 'msg-banner err';
+        return;
+    }
+
+    try {
+        const resp = await pgFetch('/api/settings/email', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        msg.textContent = resp.message;
+        msg.className = 'msg-banner ok';
+        document.getElementById('es-password').value = '';
+        loadEmailSettings();
+    } catch (err) {
+        msg.textContent = err.message;
+        msg.className = 'msg-banner err';
+    }
+}
+
+async function testEmail(sendReal) {
+    const msg = document.getElementById('email-msg');
+    msg.className = 'msg-banner';
+    msg.textContent = sendReal ? 'Sending test email...' : 'Verifying connection...';
+    msg.className = 'msg-banner ok';
+
+    try {
+        const resp = await pgFetch('/api/settings/email/test', {
+            method: 'POST',
+            body: JSON.stringify({ send: sendReal })
+        });
+        if (resp.success) {
+            msg.textContent = sendReal
+                ? `Test email sent to ${resp.recipients ? resp.recipients.join(', ') : 'your address'}.`
+                : 'Connection verified - SMTP login works.';
+            msg.className = 'msg-banner ok';
+        } else {
+            msg.textContent = resp.message || 'Test failed.';
+            msg.className = 'msg-banner err';
+        }
+    } catch (err) {
+        msg.textContent = err.message;
+        msg.className = 'msg-banner err';
     }
 }

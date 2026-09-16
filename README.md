@@ -356,7 +356,19 @@ Authenticated (`Authorization: Bearer <firebase_id_token>`):
 | `POST /api/maintenance-reports` | technical | File maintenance report |
 | `GET /api/reports/admin` | admin | Admin PDF + Excel |
 | `GET /api/reports/technical` | technical | Technical PDF + Excel |
+| `GET /api/settings/email` | admin | View email settings (password never returned) |
+| `POST /api/settings/email` | admin | Save email settings (applies immediately) |
+| `POST /api/settings/email/test` | admin | Verify SMTP / send test email |
 | `GET /api/download?file=` | any | Secured download of generated files |
+
+### Email settings without touching .env
+
+The Admin dashboard has a **"Set Up Your Mails"** panel: sender Gmail
+account, Gmail **App Password**, owner recipient, technical-team
+recipient, and SMTP server/port. Saved values are stored in Firebase
+(`settings/email`), apply immediately without a Flask restart, and
+override the `.env` defaults. The password is write-only — the API never
+returns it, and `.env` is never modified.
 
 ---
 

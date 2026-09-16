@@ -141,6 +141,24 @@ expected behaviour, not a fault.
 5. List admin emails in `.env` as `ADMIN_EMAILS=admin@123gmail.com`
    (everyone else becomes Technical Team on first login)
 
+### 5c. Set Up Your Mails (Admin dashboard - no .env editing needed)
+
+On the Admin dashboard there is a **"Set Up Your Mails"** panel. Fill in:
+
+| Field | What it is |
+|---|---|
+| Gmail / Sender Account | the Gmail that SENDS the alerts |
+| App Password | 16-character Google App Password (not the normal password) |
+| Your Email (Owner) | where YOU receive critical alerts + service updates |
+| Technical Team Email | where the team receives critical alerts |
+| SMTP Server / Port | leave as `smtp.gmail.com` / `587` for Gmail |
+
+Click **Save Settings** (applies immediately, no restart), then
+**Verify Connection** (checks the login) or **Send Test Email** (real
+email to your inbox). The saved settings override `flask_api\.env` -
+you never have to edit that file by hand. The password is stored
+write-only: nobody can view it back through the app.
+
 **Service workflow on the dashboards:**
 Owner sees a problem → admin dashboard → *Request Service* →
 technical dashboard → **Accept** (owner gets an email) → **Visited /

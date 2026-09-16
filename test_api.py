@@ -341,6 +341,87 @@ class PulseGuardAPITests(unittest.TestCase):
         self.assertEqual(r.status_code, 401)
         self.assertEqual(r.get_json().get('error'), 'not_configured')
 
+    # --------------------------------------------------------
+    # Email settings (Admin 'Set Up Your Mails')
+    # --------------------------------------------------------
+    def test_36_email_settings_admin_only(self):
+        # No token -> 401
+        self.assertEqual(
+            self.client.get('/api/settings/email').status_code, 401)
+        # Technical role -> 403
+        p1, p2, h = self._auth_as('technical')
+        with p1, p2:
+            r = self.client.get('/api/settings/email', headers=h)
+        self.assertEqual(r.status_code, 403)
+
+    def test_37_email_settings_get_masks_password(self):
+        p1, p2, h = self._auth_as('admin')
+        with p1, p2:
+            with patch('app.firebase_service.get_email_settings',
+                       return_value={'username': 'a@b.com',
+                                     'password': 'secret-app-pass'}):
+                r = self.client.get('/api/settings/email', headers=h)
+        self.assertEqual(r.status_code, 200)
+        data = r.get_json()
+        self.assertNotIn('password', data)  # never returned
+        self.assertTrue(data['password_set'])
+
+    def test_38_email_settings_save_and_validate(self):
+        p1, p2, h = self._auth_as('admin')
+        with p1, p2:
+            with patch('app.firebase_service.get_email_settings',
+                       return_value={}), \
+                 patch('app.firebase_service.save_email_settings',
+                       return_value=True) as save_mock, \
+                 patch('app.email_service.apply_overrides') as apply_mock:
+                # Valid save
+                r = self.client.post('/api/settings/email', headers=h, json={
+                    'username': 'alerts@gmail.com',
+                    'password': 'app-password-16',
+                    'recipient': 'owner@gmail.com'})
+                self.assertEqual(r.status_code, 200)
+                stored = save_mock.call_args[0][0]
+                self.assertEqual(stored['username'], 'alerts@gmail.com')
+                self.assertIn('password', stored)
+                apply_mock.assert_called_once()
+
+                # Invalid email rejected
+                r = self.client.post('/api/settings/email', headers=h,
+                                     json={'recipient': 'broken-email'})
+                self.assertEqual(r.status_code, 400)
+
+                # Invalid port rejected
+                r = self.client.post('/api/settings/email', headers=h,
+                                     json={'smtp_port': '99999'})
+                self.assertEqual(r.status_code, 400)
+
+    def test_39_email_settings_blanks_keep_stored_values(self):
+        p1, p2, h = self._auth_as('admin')
+        existing = {'username': 'old@gmail.com', 'password': 'keep-me'}
+        with p1, p2:
+            with patch('app.firebase_service.get_email_settings',
+                       return_value=existing), \
+                 patch('app.firebase_service.save_email_settings',
+                       return_value=True) as save_mock:
+                # Save only a new recipient - username/password must survive
+                r = self.client.post('/api/settings/email', headers=h,
+                                     json={'recipient': 'new@gmail.com'})
+        self.assertEqual(r.status_code, 200)
+        stored = save_mock.call_args[0][0]
+        self.assertEqual(stored['username'], 'old@gmail.com')
+        self.assertEqual(stored['password'], 'keep-me')
+        self.assertEqual(stored['recipient'], 'new@gmail.com')
+
+    def test_40_email_test_endpoint(self):
+        p1, p2, h = self._auth_as('admin')
+        with p1, p2:
+            with patch('app.email_service.test_connection',
+                       return_value={'success': True, 'message': 'ok'}):
+                r = self.client.post('/api/settings/email/test', headers=h,
+                                     json={'send': False})
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.get_json()['success'])
+
 
 def run_tests():
     print("=" * 60)
