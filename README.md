@@ -1,979 +1,436 @@
-# PULSEGUARD - Machine Health Monitoring & Predictive Maintenance System
+# PULSEGUARD — Machine Health Monitoring & Predictive Maintenance System
+### For Rotating Machinery in the Textile Manufacturing Industry
 
-![PulseGuard](https://img.shields.io/badge/PulseGuard-Machine-Health-blue)
+![PulseGuard](https://img.shields.io/badge/PulseGuard-Textile-Machinery-blue)
 ![ESP32](https://img.shields.io/badge/ESP32-IoT-orange)
 ![Firebase](https://img.shields.io/badge/Firebase-Realtime-green)
-![Flask](https://img.shields.io/badge/Flask-API-light blue)
-![ML](https://img.shields.io/badge/ML-Prediction-purple)
+![Flask](https://img.shields.io/badge/Flask-API-lightgrey)
+![ML](https://img.shields.io/badge/ML-Condition_Classification-purple)
 
-**A complete college project for machine health monitoring and predictive maintenance using IoT sensors, cloud database, machine learning, and web dashboard.**
+**A college project demonstrating end-to-end condition monitoring and
+predictive-maintenance support for a rotating motor (textile machinery),
+using IoT sensors, a cloud database, a documented data pipeline, machine
+learning, and role-based dashboards.**
 
 ---
 
-## 📋 Project Overview
+## 1. Project Overview
 
-PulseGuard is an end-to-end machine health monitoring system that:
+### Domain
 
-1. **Collects** temperature and vibration data from ESP32 sensors
-2. **Displays** real-time readings on an I2C LCD
-3. **Transmits** data to Firebase Realtime Database via Wi-Fi
-4. **Analyzes** sensor data using machine learning / rule-based baseline
-5. **Predicts** machine condition: NORMAL, WARNING, or CRITICAL
-6. **Visualizes** data on a professional web dashboard
-7. **Notifies** via email for critical conditions
+| Item | Value |
+|---|---|
+| Industry | Textile manufacturing |
+| Application | Predictive maintenance / condition monitoring |
+| Machine | Rotating machinery (demo: rotating motor) |
+| Sensors | Temperature (DHT11) + Vibration (analog) only |
+| Controller | ESP32 |
+| Database | Firebase Realtime Database |
+
+### Problem Statement
+
+In textile mills, rotating motors run continuously. Overheating bearings
+and excessive vibration develop gradually, and failures usually appear
+without warning, causing unplanned downtime across the production line.
+Small mills rarely have instrumentation that warns them early.
+
+### Objectives
+
+1. Continuously collect **temperature** and **vibration** from a rotating machine.
+2. Transmit readings to the cloud over Wi-Fi.
+3. Classify machine condition as **NORMAL / WARNING / CRITICAL**.
+4. Give the **owner** a one-glance answer: *is my machine okay?*
+5. Give the **technical team** tools: machine registry, data exports, service workflow, reports.
+6. Alert by email on critical conditions.
+7. Support the maintenance workflow from service request to maintenance report.
 
 ### System Architecture
 
 ```
-┌─────────────┐
-│   ESP32     │
-│  + DHT11    │
-│  + Vib Sensor│
-│  + LCD      │
-└──────┬──────┘
-       │ Wi-Fi
-       ▼
-┌──────────────────┐
-│  Firebase RTDB   │
-│  /readings_only  │
-│  /prediction     │
-└──────┬───────────┘
-       │ REST API
-       ▼
-┌──────────────────┐
-│  Flask API       │
-│  + ML/Baseline   │
-│  + Email Service │
-└──────┬───────────┘
-       │ HTTP
-       ▼
-┌──────────────────┐
-│  Web Dashboard   │
-│  Charts & Stats  │
-│  Real-time View  │
-└──────────────────┘
+TEXTILE ROTATING MACHINE (demo: rotating motor)
+        |
+        v
+Temperature sensor (DHT11)  +  Vibration sensor
+        |
+        v
+      ESP32  (GPIO 4 = DHT11, GPIO 34 = vibration)
+        |
+        v  Wi-Fi
+FIREBASE REALTIME DATABASE
+        |-- readings_only   (raw sensor INPUT, never modified)
+        |-- prediction      (ML OUTPUT only - minimal schema)
+        |-- machines        (registry, created by Technical Team)
+        |-- users           (Firebase Auth profiles: admin / technical)
+        |-- service_requests (owner-initiated workflow)
+        |-- maintenance_reports (post-service reports)
+        |
+        v
+FLASK API  (port 5000)
+        |-- live prediction poller (new reading -> model -> /prediction)
+        |-- auth + roles (admin / technical)
+        |-- data pipeline: RAW Excel -> cleaning -> CLEAN Excel
+        |-- PDF / Excel reports
+        |
+        v
+WEB DASHBOARDS
+        |-- /            public live monitor (industrial dark theme)
+        |-- /login.html  role-based sign-in
+        |-- /admin/      owner dashboard  ("IS MY MACHINE OKAY?")
+        |-- /technical/  technical dashboard (detailed)
 ```
 
 ---
 
-## ✨ Features
-
-### Hardware Layer
-- ✅ ESP32 microcontroller
-- ✅ DHT11 temperature & humidity sensor
-- ✅ Vibration sensor (analog)
-- ✅ 16x2 I2C LCD display
-- ✅ Wi-Fi connectivity
-
-### Data Layer
-- ✅ Firebase Realtime Database
-- ✅ Real-time data storage
-- ✅ Historical data retrieval
-- ✅ Secure configuration (no hardcoded credentials)
-
-### ML & Prediction Layer
-- ✅ Rule-based baseline for demo (clearly labeled)
-- ✅ ML pipeline ready for training with labeled data
-- ✅ Three condition levels: NORMAL, WARNING, CRITICAL
-- ✅ Transparent threshold documentation
-- ✅ Model persistence with joblib/pickle
-
-### API Layer
-- ✅ RESTful Flask API
-- ✅ Health check endpoint
-- ✅ Latest reading endpoint
-- ✅ History endpoint
-- ✅ Prediction endpoint
-- ✅ Model info endpoint
-- ✅ Email test endpoint
-- ✅ CORS support
-- ✅ Input validation
-- ✅ Error handling
-
-### Web Dashboard
-- ✅ Professional responsive design
-- ✅ Live sensor readings
-- ✅ Temperature chart
-- ✅ Vibration chart
-- ✅ Recent readings table
-- ✅ Machine status display
-- ✅ Prediction messages
-- ✅ Alert notifications
-- ✅ Auto-refresh (5 seconds)
-- ✅ Mobile-friendly
-
-### Notification Layer
-- ✅ Email alerts for CRITICAL conditions
-- ✅ SMTP configuration via environment variables
-- ✅ Cooldown/debounce mechanism (prevents spam)
-- ✅ Customizable recipient
-
----
-
-## 🛠️ Hardware
-
-### Components Required
+## 2. Hardware
 
 | Component | Quantity | Notes |
 |-----------|----------|-------|
-| ESP32 Dev Module | 1 | Any ESP32 variant |
-| DHT11 Sensor | 1 | Temperature & Humidity |
-| Vibration Sensor | 1 | Analog output |
-| 16x2 I2C LCD | 1 | With I2C backpack |
-| Jumper Wires | - | Male-to-Male & Male-to-Female |
-| Breadboard | 1 | For prototyping |
-| USB Cable | 1 | For power & programming |
+| ESP32 Dev Module | 1 | Wi-Fi microcontroller |
+| DHT11 | 1 | Temperature (humidity is read for LCD only, NOT stored) |
+| Vibration sensor | 1 | Analog output |
+| 16x2 I2C LCD | 1 | Local display at the machine |
 
-### Wiring Diagram
+### Wiring
 
-#### DHT11 Sensor
+| Sensor | Pin | ESP32 |
+|---|---|---|
+| DHT11 | DATA | GPIO 4 |
+| Vibration | OUT | GPIO 34 (ADC) |
+| LCD I2C | SDA / SCL | GPIO 21 / GPIO 22 |
+
+Full setup instructions: [`esp32/README.md`](esp32/README.md)
+
+> The stored cloud data contains **only** temperature, vibration, and a
+> timestamp — exactly matching the hardware actually deployed.
+
+---
+
+## 3. Firebase Structure (Data Integrity Rules)
+
 ```
-DHT11      →    ESP32
-────────────────────────
-VCC (3.3V) →    3.3V
-GND         →    GND
-DATA        →    GPIO 4
+PulseGuard
+├── users/{uid}                  # name, email, role (admin | technical)
+│                                # passwords live ONLY in Firebase Auth
+├── machines/{machine_id}
+│     machine_id, machine_name, machine_type, location, device_id,
+│     status, current_health, created_at, created_by, updated_at
+├── readings_only/{push_key}     # RAW SENSOR INPUT - source of truth
+│     temperature, vibration, timestamp
+├── prediction/{push_key}        # OUTPUT ONLY - minimal schema:
+│     prediction_id, record_id, prediction, timestamp
+│     (record_id links back to readings_only; sensor values are
+│      NEVER duplicated here and predictions are NEVER used as
+│      training data)
+├── service_requests/{id}
+│     request_id, machine_id, issue, prediction, status,
+│     requested_at, accepted_at, accepted_by, visited_at, completed_at
+│     status: REQUESTED -> ACCEPTED -> VISITED -> IN_PROGRESS -> FIXED -> COMPLETED
+└── maintenance_reports/{id}
+      report_id, request_id, machine_id, problem_found, action_taken,
+      parts_replaced, technician_notes, completed_at, status
 ```
 
-#### Vibration Sensor
+**Data-integrity guarantees implemented in code:**
+
+- `readings_only` is never rewritten or cleaned in place.
+- `prediction` records are written by `firebase_service.save_prediction()`
+  with a **fixed minimal schema** (extra fields are stripped).
+- Training scripts read **only** `/readings_only`, never `/prediction`.
+- RAW Excel, CLEAN Excel, and reports are stored separately (see below).
+
+---
+
+## 4. Data Pipeline (RAW Excel → Clean Excel)
+
 ```
-Vibration Sensor    →    ESP32
-──────────────────────────────────
-VCC (3.3V)          →    3.3V
-GND                  →    GND
-OUT (Analog)         →    GPIO 34
+Firebase /readings_only
+    ->  data/raw/readings_raw.xlsx        (untouched export)
+    ->  documented cleaning
+    ->  data/cleaned/readings_clean.xlsx  (+ cleaning_report.json)
 ```
 
-#### I2C LCD 16x2
+Cleaning rules (all documented in `cleaning_report.json`):
+
+1. Drop rows with missing / non-numeric temperature or vibration.
+2. Drop duplicates (same `record_id`, or identical temp+vibration+timestamp).
+3. **Flag but preserve** out-of-range values (`excluded_out_of_range` column).
+4. Normalize timestamps to epoch ms (device uptime values are replaced by
+   the Firebase push-key creation time).
+5. Sort chronologically.
+6. **No interpolation / gap-filling** — the honest choice for sensor logs.
+
+Run it:
+
+```cmd
+:: from the Technical dashboard (one click), or:
+cd flask_api
+python -c "from export_service import get_export_service; print(get_export_service().export_clean_excel())"
 ```
-LCD Module    →    ESP32
-──────────────────────────
-VCC (5V)      →    5V
-GND            →    GND
-SDA            →    GPIO 21
-SCL            →    GPIO 22
+
+Latest verified run on real data: **482 raw rows → 482 clean rows,
+5 rows flagged out-of-range (preserved), 0 interpolated.**
+
+---
+
+## 5. Machine Learning (Honest Documentation)
+
+### What the model is
+
+- **Algorithm:** Random Forest Classifier (compared against Logistic
+  Regression and Gradient Boosting on the real dataset; Random Forest
+  had the best cross-validated F1).
+- **Features:** `temperature`, `vibration` (real sensor inputs only).
+- **Classes:** NORMAL / WARNING / CRITICAL.
+
+### How training data was labelled — READ THIS
+
+The collected real data contains **no human-labelled failure events**.
+Labels were **generated by rules**:
+
+- NORMAL: temp < 38 °C AND vibration < 2.0
+- WARNING: temp 38–40 °C OR vibration 2.0–5.0
+- CRITICAL: temp > 40 °C OR vibration > 5.0
+
+### What the reported accuracy actually means
+
+Training reports ~99–100 % accuracy. That number means **"the model
+learned to reproduce the rule thresholds"** — it is accuracy against
+rule-generated labels, **NOT** proof of real-world predictive accuracy.
+It does not validate that the thresholds correctly identify real machine
+failures. This is stated in the API (`/api/model-info` disclaimer), in the
+training code, and in every evaluation output.
+
+### Current real dataset (evaluated on actual Firebase data)
+
+| Item | Value |
+|---|---|
+| Records | 482 (real ESP32 readings) |
+| Class distribution (rule labels) | normal 54 %, warning 16 %, critical 30 % |
+| Models compared | Logistic Regression, Random Forest, Gradient Boosting |
+| Selected | Random Forest (test F1 = 1.00 vs rules; LR = 0.958) |
+| Caveat | Labels are rule-generated; see above |
+
+### Path to genuine ML
+
+When real incidents occur, have an engineer tag those readings
+(`label` field, or a separate labels file). The pipeline then retrains on
+human labels and evaluation becomes meaningful. Until then PulseGuard is
+correctly described as **"machine condition classification with a
+transparent rule-informed model"**, not "failure prediction".
+
+---
+
+## 6. Roles & Workflows
+
+### Admin / Owner (non-technical)
+
+- Sees a single big answer: **MACHINE NORMAL / MACHINE ATTENTION / MACHINE PROBLEM**
+- Simple temperature/vibration readouts + last-update time
+- Views machines, service requests, maintenance history
+- **Decides** whether to request service (nothing is automatic)
+- Downloads a simple maintenance report (PDF + Excel)
+
+### Technical Team
+
+- Registers / edits machines (machine_id, name, type, location, device_id)
+- Live monitoring: temperature, vibration, prediction, sensor health, poller status
+- Downloads RAW Excel, runs the cleaning pipeline
+- Sees prediction history and full service-request queue
+- Accepts requests (owner is notified by email with a tracking link),
+  progresses status, and files the maintenance report when done
+- Generates detailed technical reports (PDF + Excel)
+
+### Service Workflow
+
+```
+ALERT (owner sees WARNING/CRITICAL)
+  -> OWNER clicks "Request Service"
+  -> service_requests (REQUESTED)
+  -> TECHNICAL accepts (ACCEPTED, owner notified by email)
+  -> VISITED -> IN_PROGRESS -> FIXED
+  -> maintenance report filed -> COMPLETED
 ```
 
 ---
 
-## 💻 Software Stack
-
-| Layer | Technology |
-|-------|------------|
-| Microcontroller | ESP32 (Arduino Framework) |
-| Sensors | DHT11, Analog Vibration |
-| Display | I2C LCD 16x2 |
-| Cloud Database | Firebase Realtime Database |
-| Backend API | Flask (Python) |
-| Machine Learning | Scikit-learn (ready) / Rule-based (current) |
-| Frontend | HTML5, CSS3, JavaScript |
-| Charts | Chart.js |
-| Email | SMTP (Gmail/outlook/etc.) |
-
----
-
-## 📁 Project Structure
-
-```
-PulseGuard/
-│
-├── esp32/
-│   ├── pulseguard_esp32.ino      # ESP32 Arduino sketch
-│   └── README.md                  # ESP32 setup guide
-│
-├── ml/
-│   ├── train_model.py             # ML training pipeline
-│   ├── model.pkl                  # Trained model or baseline info
-│   ├── requirements.txt           # ML dependencies
-│   ├── dataset/                   # Dataset directory (for future use)
-│   └── notebooks/                 # Jupyter notebooks (for exploration)
-│
-├── flask_api/
-│   ├── app.py                     # Main Flask application
-│   ├── firebase_service.py        # Firebase operations
-│   ├── model_service.py           # ML model service
-│   ├── email_service.py           # Email notification service
-│   ├── requirements.txt           # Flask dependencies
-│   └── .env.example               # Environment variables template
-│
-├── web/
-│   ├── index.html                 # Dashboard HTML
-│   ├── style.css                  # Dashboard styles
-│   └── script.js                  # Dashboard JavaScript
-│
-├── data/
-│   ├── readings.json              # Exported Firebase readings
-│   ├── predictions.json           # Exported predictions
-│   └── README.md                  # Data documentation
-│
-├── docs/
-│   └── (future documentation)
-│
-├── .gitignore                     # Git ignore rules
-├── requirements.txt               # Root dependencies
-├── LICENSE                        # MIT License
-└── README.md                      # This file
-```
-
----
-
-## 🚀 Quick Start
+## 7. Installation
 
 ### Prerequisites
 
-- Python 3.8+
-- Arduino IDE (for ESP32)
-- Firebase project (or use existing)
-- Gmail account or SMTP server (for email notifications)
+- Python 3.10+
+- Arduino IDE (for the ESP32)
+- A Firebase project with Realtime Database
 
-### Step 1: Clone Repository
+### Python setup
 
-```bash
-git clone https://github.com/msmoorthi150607s-star/PulseGuard.git
+```cmd
 cd PulseGuard
-```
-
-### Step 2: ESP32 Setup
-
-1. Install Arduino IDE
-2. Install ESP32 board support
-3. Install libraries:
-   - LiquidCrystal I2C
-   - DHT sensor library
-   - ArduinoJson
-4. Update `esp32/pulseguard_esp32.ino`:
-   ```cpp
-   const char* WIFI_SSID = "YOUR_WIFI_SSID";
-   const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
-   ```
-5. Upload to ESP32
-
-### Step 3: Firebase Setup
-
-1. Create Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
-2. Enable Realtime Database
-3. Set security rules (for testing):
-   ```json
-   {
-     "rules": {
-       ".read": true,
-       ".write": true
-     }
-   }
-   ```
-4. Copy database URL:
-   ```
-   https://your-project-id-default-rtdb.firebaseio.com/
-   ```
-
-### Step 4: Python Environment
-
-```bash
-# Create virtual environment
-python -m venv venv
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # Linux/Mac
-
-# Install dependencies
 pip install -r requirements.txt
 ```
-
-### Step 5: Configure Environment
-
-```bash
-# Copy environment template
-cd flask_api
-copy .env.example .env  # Windows
-# or
-cp .env.example .env    # Linux/Mac
-
-# Edit .env with your values
-Notepad .env  # Windows
-# or
-nano .env     # Linux/Mac
-```
-
-Required environment variables:
-
-```env
-# Firebase
-FIREBASE_URL=https://pulseguard-7ae33-default-rtdb.firebaseio.com/
-
-# Flask
-FLASK_ENV=development
-FLASK_DEBUG=1
-SECRET_KEY=your-secret-key-change-in-production
-
-# Email (for alerts)
-MAIL_USERNAME=24uca143@anjaconline.org
-MAIL_PASSWORD=YOUR_EMAIL_PASSWORD
-MAIL_RECIPIENT=your-email@example.com
-
-# SMTP
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
-```
-
-### Step 6: Train/Run ML Model
-
-```bash
-cd ml
-
-# Install ML dependencies
-pip install -r requirements.txt
-
-# Run training pipeline
-python train_model.py
-```
-
-This will:
-- Load data from `data/readings.json`
-- Perform EDA
-- Apply rule-based labels (since no real labels exist)
-- Train models (if enough data)
-- Save `model.pkl`
-
-### Step 7: Start Flask API
-
-```bash
-cd flask_api
-
-# Start API
-python app.py
-```
-
-API will start at `http://127.0.0.1:5000`
-
-### Step 8: Open Dashboard
-
-Open `web/index.html` in a browser, or serve it:
-
-```bash
-# Using Python
-cd web
-python -m http.server 8000
-
-# Open in browser
-# http://localhost:8000
-```
-
-Or open `web/index.html` directly (may have CORS issues).
-
----
-
-## 🔌 API Endpoints
-
-### Base URL
-`http://localhost:5000`
-
-### Endpoints
-
-#### Health Check
-```
-GET /api/health
-```
-**Response:**
-```json
-{
-  "status": "healthy",
-  "service": "PulseGuard API",
-  "version": "1.0.0",
-  "timestamp": "2024-01-15T10:30:00",
-  "components": {
-    "firebase": true,
-    "model": true,
-    "email": true
-  }
-}
-```
-
-#### Latest Reading
-```
-GET /api/latest
-```
-**Response:**
-```json
-{
-  "temperature": 36.5,
-  "vibration": 0.42,
-  "timestamp": 1725600000000,
-  "record_id": "-Nabc123xyz"
-}
-```
-
-#### Reading History
-```
-GET /api/history?limit=50
-```
-**Response:**
-```json
-{
-  "readings": [
-    {
-      "record_id": "-Nabc123xyz",
-      "temperature": 36.5,
-      "vibration": 0.42,
-      "timestamp": 1725600000000
-    }
-  ],
-  "count": 50,
-  "limit": 50
-}
-```
-
-#### Latest Prediction
-```
-GET /api/prediction
-```
-**Response:**
-```json
-{
-  "prediction_id": "pred_20240115_103000_123456",
-  "record_id": "-Nabc123xyz",
-  "prediction": "normal",
-  "temperature": 36.5,
-  "vibration": 0.42,
-  "timestamp": 1725600005000,
-  "message": "Your machine is operating normally..."
-}
-```
-
-#### Make Prediction (Manual)
-```
-POST /api/predict
-Content-Type: application/json
-
-{
-  "temperature": 36.5,
-  "vibration": 0.42,
-  "record_id": "optional-id"
-}
-```
-
-**Note:** This endpoint is for manual predictions. The system also performs **automatic predictions** via background polling when new readings arrive in Firebase.
-
-#### Polling Status
-```
-GET /api/polling-status
-```
-
-Returns background polling status:
-```json
-{
-  "running": true,
-  "interval_seconds": 10,
-  "last_processed_timestamp": 1725600060000,
-  "thread_name": "pulseguard-polling"
-}
-```
-**Response:**
-```json
-{
-  "prediction_id": "pred_20240115_103000_123456",
-  "record_id": "optional-id",
-  "prediction": "normal",
-  "temperature": 36.5,
-  "vibration": 0.42,
-  "timestamp": 1725600005000,
-  "message": "Your machine is operating normally...",
-  "short_message": "Machine is operating normally with a healthy pattern.",
-  "method": "rule_based",
-  "confidence": 0.85,
-  "firebase_saved": true
-}
-```
-
-#### Model Info
-```
-GET /api/model-info
-```
-**Response:**
-```json
-{
-  "model_path": "ml/model.pkl",
-  "is_loaded": true,
-  "is_rule_based": true,
-  "method": "rule_based_baseline",
-  "thresholds": {
-    "normal": {"temp_max": 38.0, "vib_max": 2.0},
-    "warning": {"temp_max": 40.0, "vib_max": 5.0},
-    "critical": {"temp_max": Infinity, "vib_max": Infinity}
-  },
-  "model_exists": true,
-  "disclaimer": "This model uses a rule-based baseline for demonstration...",
-  "recommendation": "To train a real ML model..."
-}
-```
-
-#### Test Email
-```
-POST /api/test-email
-Content-Type: application/json
-
-{
-  "recipient": "test@example.com"
-}
-```
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Email connection test successful",
-  "server": "smtp.gmail.com",
-  "port": 587
-}
-```
-
----
-
-## 📊 Firebase Database Structure
-
-### Readings (`/readings_only`)
-
-```json
-{
-  "readings_only": {
-    "-Nabc123xyz": {
-      "record_id": "-Nabc123xyz",
-      "temperature": 36.5,
-      "vibration": 0.42,
-      "timestamp": 1725600000000
-    }
-  }
-}
-```
-
-### Predictions (`/prediction`)
-
-```json
-{
-  "prediction": {
-    "-Npred001": {
-      "prediction_id": "-Npred001",
-      "record_id": "-Nabc123xyz",
-      "prediction": "normal",
-      "temperature": 36.5,
-      "vibration": 0.42,
-      "timestamp": 1725600005000,
-      "message": "Your machine is operating normally..."
-    }
-  }
-}
-```
-
----
-
-## 🤖 Machine Learning Pipeline
-
-### Current Status
-
-The project currently uses a **rule-based baseline** for demonstration because:
-
-1. The dataset has **no labels** (normal/warning/critical)
-2. Supervised ML requires labeled training data
-3. The rule-based system is transparent and well-documented
-
-### Rule-Based Thresholds
-
-| Status | Temperature | Vibration |
-|--------|-------------|-----------|
-| **NORMAL** | < 38°C | < 2.0 |
-| **WARNING** | 38-40°C OR 2.0-5.0 | - |
-| **CRITICAL** | > 40°C OR > 5.0 | - |
-
-### Training with Real Labels
-
-When you have labeled data:
-
-1. Add labels to your dataset:
-   ```json
-   {
-     "temperature": 36.5,
-     "vibration": 0.42,
-     "label": "normal"  // or "warning", "critical"
-   }
-   ```
-
-2. Place labeled data in `ml/dataset/`
-
-3. Update `train_model.py` to load labeled data
-
-4. Run training:
-   ```bash
-   cd ml
-   python train_model.py
-   ```
-
-5. The trained model will be saved as `model.pkl`
-
-### ML Pipeline Features
-
-The training pipeline (`train_model.py`) includes:
-
-- ✅ Data loading (JSON or Firebase)
-- ✅ Exploratory Data Analysis (EDA)
-- ✅ Feature engineering
-- ✅ Multiple model training (Logistic Regression, Random Forest, Gradient Boosting)
-- ✅ Cross-validation
-- ✅ Model comparison
-- ✅ Model evaluation (accuracy, precision, recall, F1)
-- ✅ Model evaluation (accuracy, precision, recall, F1)
-- ✅ Model persistence
-- ✅ Reproducible training process
-
-### ⚠️ Important: What 100% Accuracy Means
-
-**The current model reports 100% accuracy, but this does NOT mean:**
-
-- ❌ The model predicts real machine failures with 100% accuracy
-- ❌ The rules used for labeling are validated as correct
-- ❌ The model will work accurately in production
-
-**What 100% accuracy actually means:**
-
-- ✅ The model learned to replicate the rule-based labeling perfectly
-- ✅ The model correctly identifies which rule-generated label applies
-- ✅ The model is consistent with the threshold rules
-
-**Why this happened:**
-
-1. Dataset had NO human labels (no real normal/warning/critical labels)
-2. Labels were generated using rule-based thresholds
-3. ML model trained on these rule-generated labels
-4. Model learned to reproduce the rules (essentially memorizing them)
-
-**This is expected behavior** when training on rule-generated labels without real validation data.
-
-**To get real predictive accuracy:**
-
-1. Collect data with known machine conditions (human-labeled)
-2. Include actual failure events with confirmed timestamps
-3. Work with maintenance team to validate labels
-4. Retrain model on validated labels
-5. Test on held-out real failure data
-
-**Current model is suitable for:**
-- ✅ College demonstration
-- ✅ Proof of concept
-- ✅ Learning ML pipeline
-- ❌ Production deployment without validation
-
-### ⚠️ Important: What 100% Accuracy Means
-
-**The current model reports 100% accuracy, but this does NOT mean:**
-
-- ❌ The model predicts real machine failures with 100% accuracy
-- ❌ The rules used for labeling are validated as correct
-- ❌ The model will work accurately in production
-
-**What 100% accuracy actually means:**
-
-- ✅ The model learned to replicate the rule-based labeling perfectly
-- ✅ The model correctly identifies which rule-generated label applies
-- ✅ The model is consistent with the threshold rules
-
-**Why this happened:**
-
-1. Dataset had NO human labels (no real normal/warning/critical labels)
-2. Labels were generated using rule-based thresholds
-3. ML model trained on these rule-generated labels
-4. Model learned to reproduce the rules (essentially memorizing them)
-
-**This is expected behavior** when training on rule-generated labels without real validation data.
-
-**To get real predictive accuracy:**
-
-1. Collect data with known machine conditions (human-labeled)
-2. Include actual failure events with confirmed timestamps
-3. Work with maintenance team to validate labels
-4. Retrain model on validated labels
-5. Test on held-out real failure data
-
-**Current model is suitable for:**
-- ✅ College demonstration
-- ✅ Proof of concept
-- ✅ Learning ML pipeline
-- ❌ Production deployment without validation
-
----
-
-## 📈 Prediction System
-
-### Status Levels
-
-#### NORMAL
-**Message:** "Your machine is operating normally. Based on the current temperature and vibration pattern, the machine appears to be in a healthy condition."
-
-**Short:** "Machine is operating normally with a healthy pattern."
-
-#### WARNING
-**Message:** "Your machine may be developing an abnormal pattern. Based on the current temperature and vibration readings, a possible issue may occur if this trend continues. Monitor the machine closely."
-
-**Short:** "Possible abnormality detected. Monitor the machine closely."
-
-#### CRITICAL
-**Message:** "Your machine may be experiencing a potentially abnormal condition. The current temperature and vibration pattern indicates a possible risk of damage. Please inspect the machine and consider sending it to the maintenance team."
-
-**Short:** "Possible machine damage detected. Inspect the machine and contact the maintenance team."
-
----
-
-## 📧 Email Notifications
 
 ### Configuration
 
-Email notifications are sent when the machine status is **CRITICAL**.
+Copy `flask_api/.env.example` to `flask_api/.env` and fill in:
 
-Configure in `.env`:
+| Variable | Purpose |
+|---|---|
+| `FIREBASE_URL` | Realtime Database URL |
+| `FIREBASE_WEB_API_KEY` | Firebase Web API key (enables login) |
+| `ADMIN_EMAILS` | Comma-separated emails that get the admin role on first login |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | Sender account (Gmail: use an **App Password**) |
+| `MAIL_RECIPIENT` | Owner email (critical alerts) |
+| `MAIL_TECH_RECIPIENT` | Technical team email (critical alerts) |
 
-```env
-MAIL_USERNAME=24uca143@anjaconline.org
-MAIL_PASSWORD=YOUR_EMAIL_PASSWORD
-MAIL_RECIPIENT=your-email@example.com
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
-ALERT_COOLDOWN_SECONDS=3600
+**Never commit `.env`** — it is git-ignored, and no credentials exist in
+the source code.
+
+### User accounts
+
+Create users in **Firebase Console → Authentication → Users**
+(email + password). Roles are assigned automatically on first login:
+emails listed in `ADMIN_EMAILS` become `admin`, everyone else `technical`.
+Profiles are stored under `users/{uid}`.
+
+### ESP32 setup
+
+1. Open `esp32/pulseguard_esp32.ino` in Arduino IDE.
+2. Install libraries: **LiquidCrystal I2C**, **DHT sensor library**, **ArduinoJson**.
+3. Set your Wi-Fi credentials (kept out of Git).
+4. Upload, open Serial Monitor at 115200.
+
+---
+
+## 8. Running
+
+```cmd
+:: Window 1 - Flask API
+cd flask_api
+python app.py
+
+:: Window 2 - Web dashboard
+cd web
+python -m http.server 8000
 ```
 
-### Cooldown
+Or double-click `run_pulseguard.bat`.
 
-To prevent email spam, alerts are limited to once per hour (configurable).
-
-### Example Email
-
-**Subject:** `[PULSEGUARD] Critical Machine Condition Detected`
-
-**Body:**
-```
-PulseGuard has detected a potentially abnormal machine condition.
-
-Temperature: 41.2 °C
-Vibration: 7.35
-Status: CRITICAL
-
-Please inspect the machine and consider contacting the maintenance team.
-
----
-This is an automated message from PulseGuard Machine Health Monitoring System.
-```
+| URL | Page |
+|---|---|
+| http://localhost:8000 | Public live monitor |
+| http://localhost:8000/login.html | Role-based login |
+| http://localhost:8000/admin/ | Admin dashboard |
+| http://localhost:8000/technical/ | Technical dashboard |
+| http://localhost:5000/ | API documentation (JSON) |
 
 ---
 
-## 🧪 Testing
+## 9. API Endpoints
 
-### Manual Testing
+Public:
 
-#### 1. Health Check
-```bash
-curl http://localhost:5000/api/health
-```
+| Endpoint | Description |
+|---|---|
+| `GET /api/health` | Health check + component status |
+| `GET /api/latest` | Latest reading + prediction |
+| `GET /api/history?limit=50` | Reading history (joined with predictions) |
+| `GET /api/prediction` | Latest stored prediction |
+| `POST /api/predict` | Predict `{temperature, vibration}` |
+| `GET /api/model-info` | Model info + honest disclaimer |
+| `GET /api/polling-status` | Live-prediction poller status |
 
-#### 2. Latest Reading
-```bash
-curl http://localhost:5000/api/latest
-```
+Authenticated (`Authorization: Bearer <firebase_id_token>`):
 
-#### 3. History
-```bash
-curl http://localhost:5000/api/history?limit=10
-```
+| Endpoint | Role | Description |
+|---|---|---|
+| `POST /api/auth/login` | - | Sign in, returns role |
+| `GET /api/machines` | any | List machines |
+| `POST /api/machines` | technical | Register machine |
+| `PUT /api/machines/<id>` | technical | Edit machine |
+| `GET /api/export/raw` | technical | RAW Excel download |
+| `GET /api/export/clean` | technical | Run cleaning, get CLEAN Excel + report |
+| `POST /api/service-requests` | admin | Create service request |
+| `GET /api/service-requests` | any | List service requests |
+| `POST /api/service-requests/<id>/accept` | technical | Accept (emails owner) |
+| `POST /api/service-requests/<id>/status` | technical | VISITED / IN_PROGRESS / FIXED / COMPLETED |
+| `GET /api/maintenance-reports` | any | List reports |
+| `POST /api/maintenance-reports` | technical | File maintenance report |
+| `GET /api/reports/admin` | admin | Admin PDF + Excel |
+| `GET /api/reports/technical` | technical | Technical PDF + Excel |
+| `GET /api/download?file=` | any | Secured download of generated files |
 
-#### 4. Make Prediction
-```bash
-curl -X POST http://localhost:5000/api/predict \
-  -H "Content-Type: application/json" \
-  -d '{"temperature": 36.5, "vibration": 0.42}'
-```
+---
 
-#### 5. Model Info
-```bash
-curl http://localhost:5000/api/model-info
-```
+## 10. Testing
 
-#### 6. Test Email
-```bash
-curl -X POST http://localhost:5000/api/test-email \
-  -H "Content-Type: application/json" \
-  -d '{"recipient": "test@example.com"}'
+```cmd
+python test_api.py
 ```
 
-### Test Cases
+**35 tests** cover: health, model info, live readings, history,
+prediction (normal/warning/critical), invalid inputs, output-only
+prediction schema, auth enforcement (401/403), role-restricted machine
+registration, the full service workflow (create → accept → double-accept
+rejection → status updates → invalid status rejection), maintenance
+report creation + automatic request completion, the cleaning pipeline,
+admin/technical report generation, path-traversal protection, 404
+handling, and login configuration handling.
 
-| Component | Test |
-|-----------|------|
-| ESP32 sensor reading | Verify DHT11 and vibration sensor output |
-| Firebase write | Check data appears in Firebase console |
-| Firebase read | Verify API returns Firebase data |
-| API health | GET /api/health returns 200 |
-| API latest | GET /api/latest returns reading |
-| API prediction | POST /api/predict returns prediction |
-| ML model loading | Model loads without errors |
-| Invalid input | API rejects invalid temperature/vibration |
-| Missing data | API handles empty Firebase gracefully |
-| Website API connection | Dashboard fetches data successfully |
-| Prediction display | Dashboard shows NORMAL/WARNING/CRITICAL |
-| Email notification | CRITICAL triggers email (if configured) |
-| Email cooldown | Multiple CRITICAL readings don't spam email |
+Last full run: **Ran 35 tests … OK** (verified against live Firebase data).
 
 ---
 
-## 📝 Development
+## 11. Project Structure
 
-### Development Order
-
-1. ✅ Inspect existing repository and Firebase data
-2. ✅ Verify ESP32 → Firebase pipeline
-3. ✅ Create/export dataset from Firebase
-4. ✅ Analyze dataset
-5. ✅ Determine ML validity (rule-based baseline chosen)
-6. ✅ Train model (or create baseline)
-7. ✅ Save model.pkl
-8. ✅ Build Flask API
-9. ✅ Connect Flask API to Firebase + ML model
-10. ✅ Build web dashboard
-11. ✅ Add email notification
-12. ✅ Integrate everything
-13. ⏳ Test end-to-end
-14. ⏳ Clean GitHub repository
-15. ⏳ Write final documentation
-
----
-
-## 🔒 Security
-
-### Best Practices Implemented
-
-1. **No hardcoded credentials** - All secrets in environment variables
-2. **.env not committed** - `.gitignore` excludes `.env`
-3. **Firebase credentials protected** - Service account JSON not committed
-4. **Input validation** - API validates all inputs
-5. **Error handling** - Graceful error responses
-6. **CORS controlled** - Appropriate CORS headers
-
-### What NOT to Commit
-
-- `.env` files
-- `serviceAccountKey.json`
-- WiFi passwords
-- Email passwords
-- API keys
-- Secret keys
+```
+PulseGuard/
+├── esp32/                 # ESP32 sketch + wiring guide
+├── ml/                    # training pipeline + retrain-from-Firebase script
+├── flask_api/             # Flask API + services (auth, firebase, model,
+│                          # email, export, report)
+├── web/
+│   ├── index.html         # public live monitor (dark industrial theme)
+│   ├── login.html         # role-based login
+│   ├── common.js/.css     # shared helpers/theme
+│   ├── admin/             # owner dashboard
+│   └── technical/         # technical dashboard
+├── data/
+│   ├── raw/               # readings_raw.xlsx   (untouched)
+│   ├── cleaned/           # readings_clean.xlsx + cleaning_report.json
+│   └── exports/           # generated PDF/Excel reports
+├── docs/USER_MANUAL.md    # beginner-friendly run guide
+└── test_api.py            # 35-test API suite
+```
 
 ---
 
-## ⚠️ Limitations & Disclaimers
+## 12. Limitations (Stated Honestly)
 
-### ML Limitations
+1. **Labels are rule-generated.** Accuracy figures measure rule
+   reproduction, not validated failure prediction.
+2. **Single demo machine.** Health updates auto-map to a machine only
+   when one machine is registered or `device_id` matches.
+3. **No RUL claims.** Remaining-useful-life estimation is NOT attempted —
+   the data does not support it.
+4. **Humidity is displayed on the LCD only** and never stored/used in ML,
+   matching the declared sensor inputs.
+5. **Vibration spike outliers** (>20 on the 0–20 ADC scale, 5 rows in the
+   current dataset) are preserved and flagged, not removed.
+6. **Token expiry:** Firebase ID tokens last 1 hour; the dashboards
+   require re-login after expiry.
 
-- **Current model is rule-based**, not a trained ML model
-- The system does NOT predict exact machine lifetime (no RUL data)
-- Predictions are based on simple thresholds
-- ML pipeline is ready for real training when labeled data is available
+## 13. Future Enhancements
 
-### Data Limitations
-
-- Limited dataset (142 readings as of this writing)
-- No labeled failure data
-- Cannot train supervised ML models yet
-
-### Production Readiness
-
-- This is a **college project**, not production-grade software
-- Security rules should be tightened for production
-- Consider adding authentication for API
-- Rate limiting recommended for production
-- More robust error handling needed for production
-
-### Hardware Limitations
-
-- DHT11 has ±2°C accuracy
-- Vibration sensor is basic analog type
-- Calibration may be needed for specific machines
+- Engineer-labelled failure data → genuine supervised evaluation
+- Spectrum features from a proper accelerometer (if hardware changes)
+- Firebase Security Rules for direct client writes
+- SMS/WhatsApp alerts, multi-tenant mill support
+- Time-window features (rolling std/trend) for earlier anomaly warning
 
 ---
 
-## 🌟 Future Improvements
+## License
 
-- [ ] Collect labeled training data (normal/warning/critical)
-- [ ] Train real ML model with proper evaluation
-- [ ] Add more sensors (current, power, acoustic)
-- [ ] Implement anomaly detection (unsupervised)
-- [ ] Add remaining useful life (RUL) prediction if data supports it
-- [ ] Mobile app for notifications
-- [ ] User authentication for API
-- [ ] Role-based access control
-- [ ] Advanced dashboard with more analytics
-- [ ] Data export (CSV, PDF reports)
-- [ ] Multi-machine support
-- [ ] Historical comparison views
-- [ ] Maintenance scheduling integration
-- [ ] Docker containerization
-- [ ] Kubernetes deployment
-- [ ] CI/CD pipeline
-- [ ] Automated testing suite
+MIT — see [LICENSE](LICENSE).
 
----
-
-## 📚 Documentation
-
-- [ESP32 Setup Guide](esp32/README.md)
-- [Firebase Setup](docs/firebase-setup.md) (future)
-- [API Documentation](#api-endpoints)
-- [ML Pipeline](ml/train_model.py)
-
----
-
-## 🙏 Acknowledgments
-
-This project was created as a college project demonstrating:
-
-- IoT sensor integration
-- Cloud database usage
-- REST API development
-- Machine learning pipeline
-- Web dashboard creation
-- Email notification system
-
-Special thanks to the open-source communities for:
-- ESP32 Arduino core
-- Firebase
-- Flask
-- Scikit-learn
-- Chart.js
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👨‍💻 Author
-
-**PulseGuard Project**
-College Project - Machine Health Monitoring System
-
-For questions or contributions, please open an issue on GitHub.
-
----
-
-## 🎯 Success Criteria Met
-
-- ✅ ESP32 collects temperature and vibration
-- ✅ LCD displays sensor values
-- ✅ Wi-Fi connects ESP32 to network
-- ✅ Firebase stores sensor readings
-- ✅ Flask API serves data
-- ✅ Prediction system (rule-based baseline)
-- ✅ NORMAL/WARNING/CRITICAL classification
-- ✅ Web dashboard displays live data
-- ✅ Charts show historical trends
-- ✅ Email notification for CRITICAL alerts
-- ✅ Professional, clean code structure
-- ✅ No hardcoded credentials
-- ✅ Clear documentation
-
----
-
-**PULSEGUARD** - Monitoring Machine Health, One Reading at a Time.
+*This is a college project. PulseGuard provides condition-monitoring
+support and early warnings; it is not a certified industrial safety system.*

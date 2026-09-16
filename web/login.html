@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PULSEGUARD - Sign in</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="login-body">
+    <div class="login-card">
+        <div class="login-logo">
+            <div class="logo-mark">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+            </div>
+            <h1>PULSEGUARD</h1>
+        </div>
+        <p class="login-sub">Machine Health Monitoring - Textile Rotating Machinery</p>
+
+        <div class="login-error" id="login-error"></div>
+
+        <form id="login-form">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" autocomplete="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn btn-block" id="login-btn">
+                <i class="fas fa-right-to-bracket"></i> Sign in
+            </button>
+        </form>
+
+        <div class="login-hint">
+            <strong>Admin / Owner</strong> and <strong>Technical Team</strong> accounts
+            are created in the Firebase console
+            (Authentication &gt; Users), or by an administrator.
+            Your role is assigned from the first sign-in.
+        </div>
+    </div>
+
+    <script src="common.js"></script>
+    <script>
+        // Already signed in? Go straight to the right dashboard.
+        const existing = AuthStore.get();
+        if (existing) {
+            window.location.href = existing.user.role === 'admin'
+                ? 'admin/' : 'technical/';
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errBox = document.getElementById('login-error');
+            const btn = document.getElementById('login-btn');
+            errBox.className = 'login-error';
+            errBox.style.display = 'none';
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+
+            try {
+                const resp = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: document.getElementById('email').value.trim(),
+                        password: document.getElementById('password').value
+                    })
+                });
+                const data = await resp.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Login failed');
+                }
+
+                AuthStore.save(data);
+                window.location.href = data.user.role === 'admin'
+                    ? 'admin/' : 'technical/';
+            } catch (err) {
+                errBox.textContent = err.message;
+                errBox.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-right-to-bracket"></i> Sign in';
+            }
+        });
+    </script>
+</body>
+</html>

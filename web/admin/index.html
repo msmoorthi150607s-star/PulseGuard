@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PULSEGUARD - Admin Dashboard</title>
+    <link rel="stylesheet" href="../common.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <header class="dash-header">
+        <div class="brand">
+            <div class="logo-mark">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+            </div>
+            <div>
+                <h1>PULSEGUARD</h1>
+                <span>Owner Dashboard</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <a class="nav-link" href="../index.html">Live Monitor</a>
+            <span class="role-badge" id="user-name">...</span>
+            <a class="nav-link" href="#" id="logout"><i class="fas fa-right-from-bracket"></i> Logout</a>
+        </div>
+    </header>
+
+    <main class="dash-main">
+        <!-- IS MY MACHINE OKAY? -->
+        <section class="health-banner" id="health-banner">
+            <div class="health-title" id="health-title">CHECKING...</div>
+            <p class="health-msg" id="health-msg">Loading latest machine condition</p>
+        </section>
+
+        <!-- Simple readouts -->
+        <section class="readouts">
+            <div class="readout">
+                <div class="label">Temperature</div>
+                <div class="value temp" id="temp-value">--</div>
+            </div>
+            <div class="readout">
+                <div class="label">Vibration</div>
+                <div class="value vib" id="vib-value">--</div>
+            </div>
+            <div class="readout">
+                <div class="label">Last Update</div>
+                <div class="value" id="last-update" style="font-size:15px; line-height:1.4;">--</div>
+            </div>
+        </section>
+
+        <!-- Simple issue explanation + service request -->
+        <section class="panel">
+            <h2><i class="fas fa-wrench"></i> Request Service</h2>
+            <p style="color: var(--text-dim); font-size: 13px; margin-bottom: 14px;">
+                If the machine shows WARNING or CRITICAL, you can request a visit
+                from the Technical Team. You choose when - warnings alone never
+                create requests automatically.
+            </p>
+            <div class="actions-row">
+                <select id="sr-machine" class="form-group" style="width:auto; min-width:200px; margin:0;">
+                    <option value="">Select machine...</option>
+                </select>
+                <input id="sr-issue" class="form-group" placeholder="Describe the issue (optional)"
+                       style="width:auto; flex:1; min-width:220px; margin:0;">
+                <button class="btn" id="request-service-btn">
+                    <i class="fas fa-bell"></i> Request Service
+                </button>
+            </div>
+            <div class="msg-banner" id="sr-msg"></div>
+        </section>
+
+        <!-- Machines -->
+        <section class="panel">
+            <h2><i class="fas fa-industry"></i> My Machines</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>ID</th><th>Name</th><th>Type</th><th>Location</th><th>Health</th></tr>
+                    </thead>
+                    <tbody id="machines-body">
+                        <tr><td colspan="5" class="empty-state">Loading machines...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Service requests -->
+        <section class="panel">
+            <h2><i class="fas fa-clipboard-list"></i> Service Requests</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Requested</th><th>Machine</th><th>Issue</th><th>Status</th><th>Accepted By</th></tr>
+                    </thead>
+                    <tbody id="requests-body">
+                        <tr><td colspan="5" class="empty-state">Loading service requests...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Maintenance history -->
+        <section class="panel">
+            <h2><i class="fas fa-toolbox"></i> Maintenance History</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Completed</th><th>Machine</th><th>Problem Found</th><th>Action Taken</th></tr>
+                    </thead>
+                    <tbody id="maintenance-body">
+                        <tr><td colspan="4" class="empty-state">Loading maintenance history...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Reports -->
+        <section class="panel">
+            <h2><i class="fas fa-file-download"></i> My Reports</h2>
+            <div class="actions-row">
+                <button class="btn btn-secondary" id="admin-report-btn">
+                    <i class="fas fa-file-pdf"></i> Generate Maintenance Report (PDF + Excel)
+                </button>
+            </div>
+            <div class="download-links" id="report-links" style="margin-top:12px;"></div>
+            <div class="msg-banner" id="report-msg"></div>
+        </section>
+    </main>
+
+    <script src="../common.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

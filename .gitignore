@@ -7,6 +7,7 @@
 .env.local
 *.env
 .env.*
+!.env.example
 
 # Python
 __pycache__/
@@ -119,3 +120,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Data exports can be large - keep repo clean but allow READMEs
+data/raw/*.xlsx
+data/cleaned/*.xlsx
+data/exports/*
+!data/exports/.gitkeep
+!data/raw/.gitkeep
+!data/cleaned/.gitkeep

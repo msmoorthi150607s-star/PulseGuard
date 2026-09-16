@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PULSEGUARD - Technical Dashboard</title>
+    <link rel="stylesheet" href="../common.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <header class="dash-header">
+        <div class="brand">
+            <div class="logo-mark">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+            </div>
+            <div>
+                <h1>PULSEGUARD</h1>
+                <span>Technical Team Dashboard</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <a class="nav-link" href="../index.html">Live Monitor</a>
+            <span class="role-badge" id="user-name">...</span>
+            <a class="nav-link" href="#" id="logout"><i class="fas fa-right-from-bracket"></i> Logout</a>
+        </div>
+    </header>
+
+    <main class="dash-main">
+        <!-- Live monitoring -->
+        <section class="panel">
+            <h2><i class="fas fa-wave-square"></i> Live Monitoring</h2>
+            <div class="readouts">
+                <div class="readout">
+                    <div class="label">Temperature</div>
+                    <div class="value temp" id="temp-value">--</div>
+                </div>
+                <div class="readout">
+                    <div class="label">Vibration</div>
+                    <div class="value vib" id="vib-value">--</div>
+                </div>
+                <div class="readout">
+                    <div class="label">Machine Status / Prediction</div>
+                    <div class="value" id="pred-value" style="font-size:22px;">--</div>
+                    <div class="field-hint" id="pred-source"></div>
+                </div>
+                <div class="readout">
+                    <div class="label">Reading Timestamp</div>
+                    <div class="value" id="reading-ts" style="font-size:15px;">--</div>
+                </div>
+                <div class="readout">
+                    <div class="label">Sensor Health</div>
+                    <div class="value" id="sensor-health" style="font-size:15px;">--</div>
+                </div>
+                <div class="readout">
+                    <div class="label">Live Poller</div>
+                    <div class="value" id="poller-status" style="font-size:15px;">--</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Machine management -->
+        <section class="panel">
+            <h2><i class="fas fa-industry"></i> Machine Registration</h2>
+            <form id="machine-form">
+                <div class="panel-grid cols-3">
+                    <div class="form-group">
+                        <label for="m-id">Machine ID *</label>
+                        <input id="m-id" placeholder="TM-001" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="m-name">Machine Name *</label>
+                        <input id="m-name" placeholder="Textile Motor 01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="m-type">Machine Type</label>
+                        <input id="m-type" value="Rotating Motor">
+                    </div>
+                    <div class="form-group">
+                        <label for="m-location">Location / Section</label>
+                        <input id="m-location" placeholder="Spinning Section">
+                    </div>
+                    <div class="form-group">
+                        <label for="m-device">Device ID</label>
+                        <input id="m-device" placeholder="ESP32_001">
+                        <div class="field-hint">Maps the ESP32 device sending readings to this machine.</div>
+                    </div>
+                    <div class="form-group" style="display:flex; align-items:flex-end;">
+                        <button type="submit" class="btn" style="width:100%;">
+                            <i class="fas fa-plus"></i> Register / Update
+                        </button>
+                    </div>
+                </div>
+            </form>
+            <div class="msg-banner" id="machine-msg"></div>
+
+            <div class="table-wrap" style="margin-top:16px;">
+                <table>
+                    <thead>
+                        <tr><th>ID</th><th>Name</th><th>Type</th><th>Location</th><th>Device</th><th>Health</th></tr>
+                    </thead>
+                    <tbody id="machines-body">
+                        <tr><td colspan="6" class="empty-state">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Data pipeline exports -->
+        <section class="panel">
+            <h2><i class="fas fa-file-excel"></i> Data Pipeline (RAW / CLEAN Excel)</h2>
+            <p style="color: var(--text-dim); font-size: 13px; margin-bottom: 12px;">
+                RAW Excel preserves every sensor reading exactly as received.
+                CLEAN Excel runs the documented cleaning pipeline
+                (invalid rows removed, duplicates dropped, out-of-range flagged - never deleted).
+            </p>
+            <div class="actions-row">
+                <a class="btn btn-secondary" href="#" id="raw-export-btn">
+                    <i class="fas fa-download"></i> Download RAW Excel
+                </a>
+                <button class="btn" id="clean-export-btn">
+                    <i class="fas fa-broom"></i> Run Cleaning Pipeline
+                </button>
+            </div>
+            <div class="download-links" id="clean-links" style="margin-top:12px;"></div>
+            <pre id="clean-report" style="margin-top:10px; font-size:11px; color:var(--text-dim); white-space:pre-wrap; display:none;"></pre>
+        </section>
+
+        <!-- Service requests -->
+        <section class="panel">
+            <h2><i class="fas fa-clipboard-list"></i> Service Requests</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Requested</th><th>Machine</th><th>Issue</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="requests-body">
+                        <tr><td colspan="5" class="empty-state">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Prediction history -->
+        <section class="panel">
+            <h2><i class="fas fa-brain"></i> Prediction History</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Time</th><th>Record</th><th>Prediction</th></tr>
+                    </thead>
+                    <tbody id="predictions-body">
+                        <tr><td colspan="3" class="empty-state">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Maintenance report creation -->
+        <section class="panel">
+            <h2><i class="fas fa-toolbox"></i> Complete Service (Maintenance Report)</h2>
+            <form id="maintenance-form">
+                <div class="panel-grid cols-2">
+                    <div class="form-group">
+                        <label for="mr-request">Service Request</label>
+                        <select id="mr-request"><option value="">- none -</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="mr-machine">Machine *</label>
+                        <select id="mr-machine" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="mr-problem">Problem Found *</label>
+                        <input id="mr-problem" required placeholder="Bearing overheating">
+                    </div>
+                    <div class="form-group">
+                        <label for="mr-action">Action Taken *</label>
+                        <input id="mr-action" required placeholder="Replaced bearing, realigned shaft">
+                    </div>
+                    <div class="form-group">
+                        <label for="mr-parts">Parts Replaced</label>
+                        <input id="mr-parts" placeholder="6205 bearing x1">
+                    </div>
+                    <div class="form-group">
+                        <label for="mr-notes">Technician Notes</label>
+                        <input id="mr-notes" placeholder="Recommend weekly vibration check">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-check"></i> Save Maintenance Report
+                </button>
+            </form>
+            <div class="msg-banner" id="maintenance-msg"></div>
+        </section>
+
+        <!-- Technical reports -->
+        <section class="panel">
+            <h2><i class="fas fa-file-pdf"></i> Technical Reports</h2>
+            <div class="actions-row">
+                <button class="btn btn-secondary" id="tech-report-btn">
+                    <i class="fas fa-file-download"></i> Generate Technical Report (PDF + Excel)
+                </button>
+            </div>
+            <div class="download-links" id="report-links" style="margin-top:12px;"></div>
+            <div class="msg-banner" id="report-msg"></div>
+        </section>
+    </main>
+
+    <script src="../common.js"></script>
+    <script src="technical.js"></script>
+</body>
+</html>

@@ -112,9 +112,9 @@ yourself (Step 3).
 
 | Element | Meaning |
 |---|---|
-| 🟢 **LIVE** (pulsing dot, top-right) | New sensor data arrived in the last 30 s — data is flowing |
-| 🟠 **DATA 4m OLD** (amber dot) | API works, but the ESP32 stopped sending — check the device / Wi-Fi |
-| ⚪ **OFFLINE** (dim dot) | Flask API isn't running — redo Step 1 |
+| **LIVE** (pulsing dot, top-right) | New sensor data arrived in the last 30 s — data is flowing |
+| **DATA 4m OLD** (amber dot) | API works, but the ESP32 stopped sending — check the device / Wi-Fi |
+| **OFFLINE** (dim dot) | Flask API isn't running — redo Step 1 |
 | **TEMP / VIB readouts** | Latest values, updated every ~5 s |
 | **MACHINE STATE badge** | Model's verdict: NORMAL (green) / WARNING (amber) / CRITICAL (red, blinking) |
 | **Historical Trends** | Live charts of the last readings |
@@ -123,6 +123,29 @@ yourself (Step 3).
 **Turning the ESP32 on/off:** power it on → within ~10 s the dot turns green
 LIVE. Power it off → after 30 s it turns amber with the data age. That's
 expected behaviour, not a fault.
+
+### 5b. The Other Pages (Login, Admin, Technical)
+
+| Page | URL | Who uses it |
+|---|---|---|
+| Public live monitor | http://localhost:8000 | Everyone (demo hero page) |
+| Login | http://localhost:8000/login.html | Admin + Technical Team |
+| Owner dashboard | http://localhost:8000/admin/ | Admin/Owner — one big answer: MACHINE NORMAL / ATTENTION / PROBLEM, plus service requests & history |
+| Technical dashboard | http://localhost:8000/technical/ | Technical Team — machine registration, live detail, RAW/CLEAN Excel, service queue, maintenance reports, PDF/Excel reports |
+
+**Login setup (one time):**
+1. Firebase Console → Authentication → Sign-in method → enable **Email/Password**
+2. Authentication → Users → **Add user** (e.g. `admin@123gmail.com` + a password)
+3. Get the **Web API key**: Project settings (gear) → General → Web API key
+4. Put it in `flask_api\.env` as `FIREBASE_WEB_API_KEY=...` and restart Flask
+5. List admin emails in `.env` as `ADMIN_EMAILS=admin@123gmail.com`
+   (everyone else becomes Technical Team on first login)
+
+**Service workflow on the dashboards:**
+Owner sees a problem → admin dashboard → *Request Service* →
+technical dashboard → **Accept** (owner gets an email) → **Visited /
+In Progress / Fixed** → file the **Maintenance Report** → request shows
+COMPLETED for both.
 
 ---
 
