@@ -335,7 +335,11 @@ class PulseGuardAPITests(unittest.TestCase):
     # --------------------------------------------------------
     def test_35_login_without_api_key(self):
         import app as app_module
-        with patch.object(app_module.os, 'getenv', return_value=''):
+        import auth_service as auth_module
+        svc = auth_module.get_auth_service()
+        with patch.object(app_module.os, 'getenv', return_value=''), \
+                patch.object(auth_module, 'FIREBASE_WEB_API_KEY', ''), \
+                patch.object(svc, 'api_key', ''):
             r = self.client.post('/api/auth/login', json={
                 'email': 'x@y.com', 'password': 'z'})
         self.assertEqual(r.status_code, 401)
