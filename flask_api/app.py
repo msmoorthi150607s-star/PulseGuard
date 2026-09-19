@@ -140,11 +140,19 @@ def _token_uid_role(id_token: str) -> Optional[Dict[str, Any]]:
     """
     Verify a Firebase ID token using Google's public token-info endpoint.
     Returns {uid, email} or None. Roles are read from users/{uid}.
+
+    accounts:lookup requires the Web API key (?key=...); without it Google
+    returns 403 for every call and ALL token verification would fail.
     """
     import requests as _rq
     try:
+        api_key = os.getenv('FIREBASE_WEB_API_KEY', '')
+        if not api_key:
+            logger.error("Token verification impossible: FIREBASE_WEB_API_KEY is not set")
+            return None
         resp = _rq.post(
-            'https://identitytoolkit.googleapis.com/v1/accounts:lookup',
+            'https://identitytoolkit.googleapis.com/v1/accounts:lookup'
+            f'?key={api_key}',
             json={'idToken': id_token},
             timeout=10
         )
