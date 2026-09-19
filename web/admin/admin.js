@@ -93,7 +93,7 @@ async function refreshMachines() {
         const machines = data.machines || [];
 
         if (!machines.length) {
-            tbody.innerHTML = '<tr><td colspan="5" class="empty-state">' +
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">' +
                 'No machines registered yet. The Technical Team registers machines from their dashboard.</td></tr>';
             sel.innerHTML = '<option value="">Select machine...</option>';
             return;
@@ -106,6 +106,7 @@ async function refreshMachines() {
                 <td>${pgEscape(m.machine_type)}</td>
                 <td>${pgEscape(m.location)}</td>
                 <td><span class="status-chip ${pgEscape(m.current_health || 'UNKNOWN')}">${pgEscape(m.current_health || 'UNKNOWN')}</span></td>
+                <td><span class="power-state ${m.status === 'ON' ? 'on' : 'off'}">${m.status === 'ON' ? 'ON' : 'OFF'}</span></td>
             </tr>`).join('');
 
         // Keep selection stable across refreshes
@@ -114,7 +115,7 @@ async function refreshMachines() {
             machines.map(m => `<option value="${pgEscape(m.machine_id)}">${pgEscape(m.machine_id)} - ${pgEscape(m.machine_name)}</option>`).join('');
         if (current) sel.value = current;
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Could not load machines: ${pgEscape(err.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Could not load machines: ${pgEscape(err.message)}</td></tr>`;
     }
 }
 

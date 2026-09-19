@@ -893,7 +893,12 @@ def create_machine(user):
 @app.route('/api/machines/<machine_id>', methods=['PUT'])
 @require_auth('technical')
 def edit_machine(machine_id, user):
-    """Edit a machine (Technical Team only)."""
+    """Edit a machine (Technical Team only).
+
+    Supports partial updates: only the fields present in the request body
+    are changed (e.g. {"status": "ON"} for the power toggle). Omitted
+    fields keep their current values.
+    """
     data = request.get_json() or {}
     data['machine_id'] = machine_id
 
@@ -903,6 +908,13 @@ def edit_machine(machine_id, user):
             'error': 'Not found',
             'message': f'Machine {machine_id} is not registered'
         }), 404
+
+    # Merge onto the existing machine so partial updates (like the
+    # ON/OFF power toggle) never blank out unspecified fields.
+    for key in ('machine_name', 'machine_type', 'location', 'device_id',
+                'status', 'current_health'):
+        if data.get(key) in (None, ''):
+            data[key] = existing.get(key, '')
 
     ok = firebase_service.save_machine(data, created_by=user['uid'])
     if not ok:

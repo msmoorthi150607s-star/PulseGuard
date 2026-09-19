@@ -81,13 +81,6 @@ async function refreshLive() {
     } catch (err) {
         console.error('Live refresh failed:', err);
     }
-
-    try {
-        const poll = await pgFetch('/api/polling-status');
-        const el = document.getElementById('poller-status');
-        el.textContent = poll.running ? `RUNNING (${poll.interval_seconds}s)` : 'STOPPED';
-        el.style.color = poll.running ? 'var(--normal)' : 'var(--critical)';
-    } catch (err) { /* non-fatal */ }
 }
 
 // ------------------------------------------------------------
@@ -100,7 +93,7 @@ async function refreshMachines() {
         const machines = data.machines || [];
 
         if (!machines.length) {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No machines registered - use the form above.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No machines registered - use the form above.</td></tr>';
         } else {
             tbody.innerHTML = machines.map(m => `
                 <tr>
@@ -110,6 +103,12 @@ async function refreshMachines() {
                     <td>${pgEscape(m.location)}</td>
                     <td class="mono">${pgEscape(m.device_id)}</td>
                     <td><span class="status-chip ${pgEscape(m.current_health || 'UNKNOWN')}">${pgEscape(m.current_health || 'UNKNOWN')}</span></td>
+                    <td>
+                        <button class="power-toggle ${m.status === 'ON' ? 'on' : 'off'}"
+                                onclick="togglePower('${pgEscape(m.machine_id)}', '${m.status === 'ON' ? 'OFF' : 'ON'}')">
+                            ${m.status === 'ON' ? 'ON' : 'OFF'}
+                        </button>
+                    </td>
                 </tr>`).join('');
         }
 
@@ -121,6 +120,28 @@ async function refreshMachines() {
         if (curM) mSel.value = curM;
     } catch (err) {
         tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${pgEscape(err.message)}</td></tr>`;
+    }
+}
+
+// ------------------------------------------------------------
+// Machine power ON/OFF (technical only; admin sees the status)
+// ------------------------------------------------------------
+async function togglePower(machineId, newState) {
+    const authData = AuthStore.get();
+    try {
+        const resp = await fetch(`${API_BASE_URL}/api/machines/${encodeURIComponent(machineId)}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + authData.id_token
+            },
+            body: JSON.stringify({ status: newState })
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.message || `HTTP ${resp.status}`);
+        refreshMachines();
+    } catch (err) {
+        alert(`Could not set ${machineId} to ${newState}: ` + err.message);
     }
 }
 
