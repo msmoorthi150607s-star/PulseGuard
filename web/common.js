@@ -94,3 +94,45 @@ function pgFormatTime(ts) {
     const d = new Date(Number(ts));
     return isNaN(d.getTime()) ? '--' : d.toLocaleString();
 }
+
+/**
+ * Authenticated file download.
+ * <a href> links cannot send the Authorization header, so report/export
+ * downloads must go through fetch() with the Bearer token attached.
+ */
+async function pgDownloadFile(fileName, linkEl) {
+    const auth = AuthStore.get();
+    if (!auth || !auth.id_token) {
+        window.location.href = '../login.html';
+        return;
+    }
+    if (linkEl) linkEl.style.pointerEvents = 'none';
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/api/download?file=${encodeURIComponent(fileName)}`,
+            { headers: { 'Authorization': 'Bearer ' + auth.id_token } }
+        );
+        if (response.status === 401) {
+            AuthStore.clear();
+            window.location.href = '../login.html';
+            return;
+        }
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || data.message || `HTTP ${response.status}`);
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    } catch (err) {
+        alert('Download failed: ' + err.message);
+    } finally {
+        if (linkEl) linkEl.style.pointerEvents = '';
+    }
+}

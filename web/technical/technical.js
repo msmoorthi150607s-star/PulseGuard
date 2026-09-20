@@ -119,7 +119,7 @@ async function refreshMachines() {
             machines.map(m => `<option value="${pgEscape(m.machine_id)}">${pgEscape(m.machine_id)}</option>`).join('');
         if (curM) mSel.value = curM;
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">${pgEscape(err.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state">${pgEscape(err.message)}</td></tr>`;
     }
 }
 
@@ -209,10 +209,15 @@ async function runCleaning() {
             `- flagged out-of-range (preserved): ${r.flagged_out_of_range}\n` +
             `- interpolated values: ${r.interpolated_values} (no interpolation by design)`;
         links.innerHTML =
-            `<a href="${API_BASE_URL}/api/download?file=${encodeURIComponent('readings_clean.xlsx')}" download>` +
+            `<a href="#" data-file="readings_clean.xlsx">` +
             `<i class="fas fa-file-excel"></i> readings_clean.xlsx</a>` +
-            `<a href="${API_BASE_URL}/api/download?file=${encodeURIComponent('readings_raw.xlsx')}" download>` +
+            `<a href="#" data-file="readings_raw.xlsx">` +
             `<i class="fas fa-file-excel"></i> readings_raw.xlsx</a>`;
+        links.querySelectorAll('a[data-file]').forEach(a =>
+            a.addEventListener('click', ev => {
+                ev.preventDefault();
+                pgDownloadFile(a.dataset.file, a);
+            }));
     } catch (err) {
         msg.style.display = 'block';
         msg.textContent = 'Cleaning failed: ' + err.message;
@@ -374,12 +379,17 @@ async function generateReport() {
         for (const [fmt, info] of Object.entries(resp.reports || {})) {
             if (info && info.file) {
                 const name = info.file.split(/[\\/]/).pop();
-                parts.push(`<a href="${API_BASE_URL}/api/download?file=${encodeURIComponent(name)}" download>` +
+                parts.push(`<a href="#" data-file="${encodeURIComponent(name)}">` +
                     `<i class="fas fa-${fmt === 'pdf' ? 'file-pdf' : 'file-excel'}"></i> ${name}</a>`);
             }
         }
         links.innerHTML = parts.join('') || 'No files generated.';
-        msg.textContent = 'Reports generated below.';
+        links.querySelectorAll('a[data-file]').forEach(a =>
+            a.addEventListener('click', ev => {
+                ev.preventDefault();
+                pgDownloadFile(decodeURIComponent(a.dataset.file), a);
+            }));
+        msg.textContent = 'Reports generated below - click a file to download.';
         msg.className = 'msg-banner ok';
     } catch (err) {
         msg.textContent = err.message;
