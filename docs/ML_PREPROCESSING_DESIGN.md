@@ -46,10 +46,10 @@
 | Dataset | Window | Hop | Windows/file | Rationale |
 |---|---|---|---|---|
 | KAIST | **5 s** (128 000 samples) | 5 s non-overlap | ~15 per hourly file (~39 000 max in full archive; ~60 in excerpts) | Long enough for stable RMS/kurtosis/band features at 25.6 kHz; short enough to keep temporal resolution within an hour; matches own-data 1-min scale after aggregation |
-| ZTMF | **5 s** (128 000 samples) | 5 s non-overlap | 60 per 5-min recording | Same window length → **statistically comparable features across both external datasets**; non-overlap prevents leakage (§8) |
+| ZTMF | **5 s** (128 000 samples) | 5 s non-overlap | 60 per 5-min recording | Same window length → **statistically comparable features across both external datasets**; non-overlap is a sampling choice, not a leakage guarantee (§8) |
 | Own DC motor (context only — production untouched) | 1 min (12 rows) | 1 min | — | Only if a future experiment ever compares against external window tables |
 
-Overlapping windows are excluded by design for training sets (leakage), except where explicitly documented for smoothing plots (never for train/test rows).
+5-second non-overlapping windows are used to create experimental samples. **Windows themselves do NOT guarantee leakage-free evaluation.** Leakage is controlled by grouping all windows originating from the same source file into the same train/test split, so windows from one source recording cannot appear in both training and test partitions. Overlapping windows are additionally excluded by design for training sets, except where explicitly documented for smoothing plots (never for train/test rows).
 
 ## 5. Candidate features (both permitted physical inputs only)
 
@@ -100,14 +100,14 @@ Overlapping windows are excluded by design for training sets (leakage), except w
 | | A1: temperature + one vibration representation | A2: temperature + multiple derived vibration features | A3: separate dataset-specific experimental models |
 |---|---|---|---|
 | Definition | e.g. `temp_value` + `vib_rms` per window — the minimal common table | `temp_value` + V1–V7 (+T2/T3) per window | One experimental pipeline per dataset (KAIST progression model; ZTMF condition classifier), never pooled |
-| Advantages | Closest analogue to the production model's 2-input contract → cleanest conceptual comparison; simplest; least overfitting risk with few labels | Captures impulsiveness (kurtosis, crest, clearance) that single RMS misses — the actual fault signatures in bearing data; still strictly 2-sensor-derived | Maximum validity: no cross-dataset unit/scale questions at all; each model answers its own question |
+| Advantages | **Baseline experiment** with the same feature *style* as the production model's two-input contract → provides a **limited** comparison; simplest; least overfitting risk with few labels. NOT equivalent to the production model's physical vibration input: the external accelerometer measurements and the prototype sensor representation have **different sensor characteristics and scales** | Captures impulsiveness (kurtosis, crest, clearance) that single RMS misses — the actual fault signatures in bearing data; still strictly 2-sensor-derived | Maximum validity: no cross-dataset unit/scale questions at all; each model answers its own question |
 | Disadvantages | Discards most of the discriminative signal; kurtosis-class information lost | Needs enough windows per class; more overfitting surface; adds compatibility burden (F1 scale issue remains) | Three results that cannot be averaged into one headline number; more code to maintain |
 | Compatibility issues | Only via per-dataset calibration caveat (units differ) | Same, multiplied by feature count | None (by construction) |
-| Fair comparison with production model? | **Yes** — same feature *style* (instantaneous temp+vibration level); differs only in window granularity. State this difference explicitly | Partial — richer features than production; any comparison must be labelled "experimental feature set" | **No** — different datasets/targets entirely; explicitly not comparable |
+| Fair comparison with production model? | **Limited comparison only** — same feature *style* (instantaneous temperature+vibration level) and similar window granularity, but **not automatically equivalent** to the production model's physical vibration input: external accelerometer measurements vs the prototype sensor differ in sensor characteristics, sensitivity, and value scale. Any comparison must be presented as "baseline experimental analogy", never as model equivalence | Partial — richer features than production; any comparison must be labelled "experimental feature set" | **No** — different datasets/targets entirely; explicitly not comparable |
 
 ## 8. Risks / data-leakage concerns
 
-1. **Temporal autocorrelation → the dominant leakage risk.** Consecutive 5 s windows are nearly identical. All splits for KAIST must be **by hour-block** (GroupShuffleSplit on `source_file`), never random-by-window. ZTMF splits by `source_file` (condition severity variants of the same run must stay on one side).
+1. **Temporal autocorrelation → the dominant leakage risk.** Consecutive 5 s windows are nearly identical. Window non-overlap alone does NOT prevent leakage: windows from one source recording must never straddle the train/test boundary. All splits for KAIST must be **by hour-block** (GroupShuffleSplit on `source_file`), never random-by-window. ZTMF splits by `source_file` (condition severity variants of the same run must stay on one side).
 2. **Overlapping windows** — excluded from training by design (§4).
 3. **Normalization leakage** — scalers (if any) fitted on train hours only, saved inside the experimental pipeline.
 4. **Unit non-comparability (F1)** — any cross-dataset table must never be pooled without a documented per-dataset calibration; currently none exists → pooling is out of scope.
