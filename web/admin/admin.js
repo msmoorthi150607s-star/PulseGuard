@@ -27,7 +27,9 @@ function initAdmin() {
     loadEmailSettings();
 
     refreshAll();
-    setInterval(refreshAll, 10000);
+    // Perf: loop guard prevents overlapping refreshes if the API slows down
+    const guardAll = pgCreateLoopGuard();
+    setInterval(() => guardAll(refreshAll), 10000);
 }
 
 async function refreshAll() {

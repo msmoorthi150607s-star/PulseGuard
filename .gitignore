@@ -128,3 +128,8 @@ data/exports/*
 !data/exports/.gitkeep
 !data/raw/.gitkeep
 !data/cleaned/.gitkeep
+
+# Dataset packages (see data/README.md):
+# - raw verbatim excerpts + Excel + metadata ARE committed (small, ~22 MB total)
+# - large cleaned CSVs are regenerable via: python data/build_dataset_packages.py
+data/external/*/cleaned/*.csv

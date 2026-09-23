@@ -1,0 +1,146 @@
+{
+  "dataset_id": "ZTMF_ROTATING_MACHINE",
+  "human_readable_name": "Rotating Machine Under Varying Load Conditions (Vibration + Temperature)",
+  "original_dataset_name": "Vibration, Acoustic, Temperature, and Motor Current Dataset of Rotating Machine Under Varying Load Conditions for Fault Diagnosis",
+  "source": "Mendeley Data",
+  "source_reference": "DOI 10.17632/ztmf3m7h5x.2; Data in Brief 2023",
+  "source_url": "https://data.mendeley.com/datasets/ztmf3m7h5x/2",
+  "access_date": "2026-09-23",
+  "machine_or_test_rig": "Rotating machine fault-simulation test rig (induction motor driven); conditions: normal, bearing inner/outer race faults (BPFI/BPFO), shaft misalignment, rotor unbalance at 3 severity levels; loads 0/2/4 Nm",
+  "sensor_information": {
+    "vibration": "4x ceramic shear ICP accelerometers (housing A x/y, housing B x/y), unit g, MATLAB .mat files",
+    "temperature": "2x thermocouples (housing A/B), unit degC, NI TDMS files (NI 9210)",
+    "motor_current": "3x current transformers (U/V/W phase), unit A - PRESERVED IN RAW, EXCLUDED from ML features",
+    "acoustic": "microphone (Pa) - in separate acoustic.zip, not fetched (not a PulseGuard feature)"
+  },
+  "temperature_available": true,
+  "vibration_available": true,
+  "temperature_unit": "degC (TDMS unit_string property)",
+  "vibration_unit": "g (gravitational constant, per dataset description)",
+  "sampling_information": "Vibration .mat: struct with y_values (7680000 x 4 double matrix; 4 accelerometer channels, column-major; source time vector in x_values field); TDMS: NI FlexLogger logs with wf_increment property; excerpts truncated at 3 MB verbatim prefixes",
+  "operating_conditions": "Varying load 0/2/4 Nm; fault conditions with severity levels; ISO-standard acquisition (Siemens + NI DAQ)",
+  "labels_available": true,
+  "label_note": "Condition encoded in source FILENAMES (loadNm_condition_severity), e.g. 0Nm_Normal, 0Nm_Unbalance_0583mg. No per-sample labels.",
+  "original_file_format": "45 .mat (vibration) + 45 .tdms (temp+current) + acoustic in 3 ZIPs (~4.3 GB total)",
+  "files_in_source": 45,
+  "files_in_excerpt": 4,
+  "excerpt_strategy": "verbatim 3 MB byte-prefix of 2 .mat and 2 .tdms members via HTTP range requests",
+  "preprocessing_applied": [
+    "MAT-5 matrix header parsed; numeric payload rows extracted verbatim from prefix (row-boundary cut)",
+    "TDMS channels read with npTDMS (truncated-tail tolerated); row count = min across channels",
+    "condition column taken from source filename only",
+    "NO interpolation, NO unit conversion, NO value modification"
+  ],
+  "excluded_features": [
+    "motor_current (U/V/W phase)",
+    "acoustic (not fetched)"
+  ],
+  "license_or_usage_information": "CC BY 4.0",
+  "raw_preserved": "raw/ holds byte-verbatim member prefixes; full archives re-downloadable from source_url",
+  "notes": {
+    "vibration_files": {
+      "0Nm_Normal.mat": {
+        "declared_dims_rows_x_channels": [
+          7680000,
+          4
+        ],
+        "samples_extracted_from_prefix": 93663,
+        "rms_per_channel_g": [
+          0.9821,
+          0.9825,
+          0.9795,
+          0.9817
+        ]
+      },
+      "0Nm_Unbalance_0583mg.mat": {
+        "declared_dims_rows_x_channels": [
+          3072000,
+          4
+        ],
+        "samples_extracted_from_prefix": 93663,
+        "rms_per_channel_g": [
+          0.9339,
+          0.9319,
+          0.9342,
+          0.9369
+        ]
+      }
+    },
+    "temperature_files": {
+      "0Nm_Normal.tdms": {
+        "channels": [
+          {
+            "channel": "cDAQ9185-1F486B5Mod1/ai0",
+            "unit": "°C",
+            "samples_read": 76825,
+            "declared_samples": 25608
+          },
+          {
+            "channel": "cDAQ9185-1F486B5Mod1/ai1",
+            "unit": "°C",
+            "samples_read": 76825,
+            "declared_samples": 25608
+          },
+          {
+            "channel": "cDAQ9185-1F486B5Mod2/ai0",
+            "unit": "A",
+            "samples_read": 76825,
+            "declared_samples": 25608
+          },
+          {
+            "channel": "cDAQ9185-1F486B5Mod2/ai2",
+            "unit": "A",
+            "samples_read": 76825,
+            "declared_samples": 25608
+          },
+          {
+            "channel": "cDAQ9185-1F486B5Mod2/ai3",
+            "unit": "A",
+            "samples_read": 66878,
+            "declared_samples": 25608
+          }
+        ],
+        "wf_start_time": "2021-06-25T06:59:53.566401",
+        "wf_increment_s": 3.905e-05,
+        "rows_extracted": 66878
+      },
+      "0Nm_Unbalance_0583mg.tdms": {
+        "channels": [
+          {
+            "channel": "cDAQ9185-1F486B5Mod1/ai0",
+            "unit": "°C",
+            "samples_read": 76825,
+            "declared_samples": 25608
+          },
+          {
+            "channel": "cDAQ9185-1F486B5Mod1/ai1",
+            "unit": "°C",
+            "samples_read": 76825,
+            "declared_samples": 25608
+          },
+          {
+            "channel": "cDAQ9185-1F486B5Mod2/ai0",
+            "unit": "A",
+            "samples_read": 76825,
+            "declared_samples": 25608
+          },
+          {
+            "channel": "cDAQ9185-1F486B5Mod2/ai2",
+            "unit": "A",
+            "samples_read": 76825,
+            "declared_samples": 25608
+          },
+          {
+            "channel": "cDAQ9185-1F486B5Mod2/ai3",
+            "unit": "A",
+            "samples_read": 66877,
+            "declared_samples": 25608
+          }
+        ],
+        "wf_start_time": "2021-06-25T07:48:19.471253",
+        "wf_increment_s": 3.905e-05,
+        "rows_extracted": 66877
+      }
+    }
+  }
+}

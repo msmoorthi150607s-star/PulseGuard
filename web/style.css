@@ -404,7 +404,9 @@ body {
 
 .status-light.normal { background: var(--status-normal); box-shadow: 0 0 8px var(--status-normal-glow); }
 .status-light.warning { background: var(--status-warning); box-shadow: 0 0 8px var(--status-warning-glow); }
+/* Perf: animate opacity only (composited). Static box-shadow avoids per-frame repaints. */
 .status-light.critical { background: var(--status-critical); box-shadow: 0 0 8px var(--status-critical-glow); animation: pulse-critical 2s ease-in-out infinite; }
+.status-light.normal, .status-light.warning { will-change: auto; }
 
 .status-text {
     display: flex;
@@ -519,7 +521,8 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.05em;
     cursor: pointer;
-    transition: all var(--transition-normal);
+    /* Perf: specific properties instead of 'all' (avoids needless style recalc) */
+    transition: color var(--transition-normal), border-color var(--transition-normal), background var(--transition-normal);
 }
 
 .btn-refresh:hover {
@@ -680,7 +683,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--transition-fast);
+    /* Perf: specific properties instead of 'all' */
+    transition: color var(--transition-fast), background var(--transition-fast);
     border: none;
     cursor: pointer;
     margin-left: var(--space-md);
@@ -696,14 +700,14 @@ body {
 }
 
 /* Animations */
+/* Perf: opacity-only keyframes (GPU-composited, no repaints).
+   box-shadow animation here caused page-wide jank while the light pulses. */
 @keyframes pulse-critical {
     0%, 100% {
         opacity: 1;
-        box-shadow: 0 0 8px var(--status-critical-glow);
     }
     50% {
-        opacity: 0.8;
-        box-shadow: 0 0 16px var(--status-critical-glow);
+        opacity: 0.55;
     }
 }
 

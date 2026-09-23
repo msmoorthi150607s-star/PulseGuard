@@ -1,0 +1,37 @@
+{
+  "dataset_id": "KAIST_BALL_BEARING",
+  "human_readable_name": "KAIST Ball Bearing Run-to-Failure (Vibration + Temperature)",
+  "original_dataset_name": "Ball Bearing Vibration, and Temperature Run-to-Failure Dataset",
+  "source": "Mendeley Data (KAIST)",
+  "source_reference": "DOI 10.17632/5hcdd3tdvb.6; Data in Brief: 'Vibration, and Temperature Run-to-Failure Dataset of Ball Bearing for Prognostics'",
+  "source_url": "https://data.mendeley.com/datasets/5hcdd3tdvb/6",
+  "access_date": "2026-09-23",
+  "machine_or_test_rig": "NSK 6205 ball bearing (25 mm bore), accelerated life test rig, 1770-1780 RPM, axial load 2.94 kN + vertical load 5.88 kN; test terminated at bearing temp > 85 C or vibration > 9 m/s^2; operating period 2022-06-20 17:00 to 2022-06-26 01:00 (128 h)",
+  "sensor_information": {
+    "vibration": "PCB 352C34 ICP accelerometer, x and y axes, 25.6 kHz",
+    "temperature_bearing": "K-type thermocouple, 25.6 kHz sampled (constant per block)",
+    "temperature_atmospheric": "K-type thermocouple, 25.6 kHz sampled (constant per block)"
+  },
+  "temperature_available": true,
+  "vibration_available": true,
+  "temperature_unit": "degC",
+  "vibration_unit": "raw source values preserved (dataset description cites an m/s^2 termination threshold but does not state the column unit)",
+  "sampling_information": "Vibration sampled 25.6 kHz; each hourly CSV holds a 78.125 s waveform (2,000,000 samples); temperatures constant within each file block",
+  "operating_conditions": "Constant speed 1770-1780 RPM under fixed axial+vertical load; run-to-failure accelerated life test",
+  "labels_available": false,
+  "label_note": "No condition/failure labels per record in source. First/last hourly files have positional context only (start of test / final hours).",
+  "original_file_format": "129 headerless CSV files in one 4.3 GB ZIP (4 columns, no timestamps)",
+  "files_in_source": 129,
+  "files_in_excerpt": 4,
+  "excerpt_strategy": "verbatim 2 MB byte-prefix of first 2 and last 2 hourly CSVs, cut at row boundary, via HTTP range requests",
+  "preprocessing_applied": [
+    "numeric coercion; rows with non-numeric sensor values dropped",
+    "exact duplicate rows dropped",
+    "chronological ordering by source file then in-file index",
+    "NO interpolation, NO gap filling, NO unit conversion, NO value modification"
+  ],
+  "excluded_features": "none (source has only the 4 columns; temperature and vibration are the only signals)",
+  "license_or_usage_information": "CC BY 4.0",
+  "raw_preserved": "raw/ holds byte-verbatim excerpts; original archive re-downloadable from source_url",
+  "notes": "ML features permitted: vibration_x/vibration_y and temperature_bearing_c. Timestamps derived from filenames + documented sample clock, not present in source."
+}

@@ -1,0 +1,33 @@
+{
+  "dataset_id": "OWN_DC_MOTOR",
+  "human_readable_name": "DC Motor Prototype (PulseGuard physical build)",
+  "original_dataset_name": "PulseGuard readings_only Firebase export",
+  "source": "Own hardware prototype: ESP32 + DHT11 (temperature/humidity, DATA on GPIO 4) + analog vibration sensor on GPIO 34; LCD on I2C; readings POSTed to Firebase every 5 s",
+  "source_reference": "PulseGuard esp32/pulseguard_esp32.ino + flask_api export_service.py",
+  "source_url": "Firebase Realtime Database /readings_only (private project)",
+  "access_date": "2026-09-23",
+  "machine_or_test_rig": "Low-cost rotating DC motor (college demonstration prototype) - NOT an industrial bearing rig",
+  "sensor_information": {
+    "temperature": "DHT11, degC",
+    "vibration": "analog vibration module on ESP32 ADC GPIO 34, raw counts"
+  },
+  "temperature_available": true,
+  "vibration_available": true,
+  "temperature_unit": "degC",
+  "vibration_unit": "raw ADC counts (dimensionless)",
+  "sampling_information": "ESP32 posts one reading every ~5 s while running; each Firebase push is one record",
+  "operating_conditions": "Single demonstration motor run; ambient lab conditions; no controlled fault seeding",
+  "labels_available": false,
+  "label_note": "No human/failure labels. Model labels are rule-generated (temp 38-40 C / vib 2-5 warnings; >40 C / >5 critical) - documented in ml/train_model.py.",
+  "original_file_format": "Firebase JSON -> Excel export",
+  "preprocessing_applied": [
+    "cleaning pipeline in flask_api/export_service.py (documented cleaning_report.json)",
+    "no unit conversion; no interpolation"
+  ],
+  "excluded_features": [
+    "humidity (read by DHT11 for LCD only; not uploaded, not an ML feature)"
+  ],
+  "license_or_usage_information": "Own project data",
+  "raw_preserved": "Copies taken for this registry; authoritative files remain data/raw/readings_raw.xlsx (untouched) and Firebase",
+  "notes": "Identity rule: OWN_DC_MOTOR != KAIST_BALL_BEARING != ZTMF_ROTATING_MACHINE. External datasets must never be described as data from this motor."
+}

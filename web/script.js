@@ -204,21 +204,29 @@ function updateTimestamp(timestamp) {
  */
 async function fetchApi(endpoint) {
     const url = API_BASE_URL ? `${API_BASE_URL}${endpoint}` : endpoint;
-    
+
+    // Perf: 8s timeout so a slow/hung API never leaves the 5s refresh loop
+    // stacking up overlapping requests (main cause of dashboard-wide lag).
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+
     try {
         const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json'
-            }
+            },
+            signal: controller.signal
         });
-        
+        clearTimeout(timer);
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         return await response.json();
     } catch (error) {
+        clearTimeout(timer);
         console.error(`API error fetching ${endpoint}:`, error);
         updateApiStatus(false);
         throw error;

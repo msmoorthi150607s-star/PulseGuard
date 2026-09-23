@@ -1,0 +1,77 @@
+{
+  "comparison": [
+    [
+      "aspect",
+      "OWN_DC_MOTOR",
+      "KAIST_BALL_BEARING",
+      "ZTMF_ROTATING_MACHINE"
+    ],
+    [
+      "machine",
+      "DC motor (college rig)",
+      "NSK 6205 ball bearing test rig",
+      "Rotating machine fault rig (motor-driven)"
+    ],
+    [
+      "temperature sensor",
+      "DHT11 (air/housing, 0.5-2 C accuracy)",
+      "K-type thermocouple (bearing)",
+      "2x thermocouples (housing A/B)"
+    ],
+    [
+      "temperature unit",
+      "degC",
+      "degC",
+      "degC"
+    ],
+    [
+      "vibration sensor",
+      "analog vibration module (ADC counts)",
+      "PCB 352C34 ICP accelerometer (x, y)",
+      "4x ICP accelerometers (x, y per housing)"
+    ],
+    [
+      "vibration unit",
+      "raw ADC counts (NOT physical units)",
+      "raw source values (g or m/s^2 - column unit not stated)",
+      "g (documented)"
+    ],
+    [
+      "sampling",
+      "~0.2 Hz (one reading / 5 s)",
+      "25.6 kHz waveforms, published hourly",
+      "high-rate (kHz-class) logs"
+    ],
+    [
+      "operating profile",
+      "single demo run",
+      "constant 1770-1780 RPM run-to-failure",
+      "3 loads x 5+ conditions x severities"
+    ],
+    [
+      "labels",
+      "none (rules only)",
+      "none",
+      "filename-encoded condition"
+    ],
+    [
+      "scale (excerpt)",
+      "693 rows",
+      "112,279 rows",
+      "vib 149k rows + temp 40k rows"
+    ]
+  ],
+  "findings": [
+    "F1 - UNITS: vibration units are NOT comparable. Own data is raw ADC counts; ZTMF is documented in g; KAIST column unit is unstated (m/s^2 cited for the termination threshold). Direct pooling of vibration values would be physically meaningless without a documented per-dataset calibration that DOES NOT currently exist.",
+    "F2 - SCALE/SAMPLING: own data is 5-second aggregate-style readings; externals are kHz waveforms. Any joint use needs feature extraction (RMS/peak/rolling stats) per window before comparison - not raw-value pooling.",
+    "F3 - LABELS: externals carry no NORMAL/WARNING/CRITICAL labels compatible with the PulseGuard baseline; ZTMF condition names (Normal/Unbalance) are fault-class names, NOT the 3-level health scheme. Forcing them into the baseline classes would violate the no-fabrication rule.",
+    "F4 - TEMPERATURE placement: DHT11 reads ambient/air near the motor; KAIST reads the bearing itself; ZTMF reads housing. Same unit (degC) but different physical measurement points.",
+    "F5 - EXCERPTS: external packages contain documented verbatim excerpts, not the full 4.3 GB archives; re-download scripts and URLs are provided for the full data."
+  ],
+  "recommended_use": [
+    "Combined training: NOT RECOMMENDED in this task (F1, F3).",
+    "Separate models / per-dataset experiments: appropriate - features_for_ml are aligned for future experimentation.",
+    "External validation of the PulseGuard baseline: possible for KAIST early-life vs final-hours context (documented positional context), treating results as demonstration, not validated accuracy.",
+    "Transfer/reference use: ZTMF filename labels can support a SEPARATE fault-vs-normal classifier experiment on ZTMF data alone, without touching the production model.pkl."
+  ]
+}

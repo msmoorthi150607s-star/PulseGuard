@@ -1,11 +1,11 @@
 {
-  "input_rows": 482,
+  "input_rows": 961,
   "removed_missing_sensor_values": 0,
   "removed_duplicates": 0,
   "flagged_out_of_range": 5,
   "interpolated_values": 0,
   "timestamp_fixed_to_epoch_ms": 0,
-  "output_rows": 482,
+  "output_rows": 961,
   "rules_applied": [
     "Drop rows with missing/non-numeric temperature or vibration",
     "Drop duplicate records (same record_id, or same temp+vibration+timestamp)",
@@ -14,5 +14,5 @@
     "Timestamps normalized to epoch milliseconds (device uptime values replaced by Firebase push-key time)",
     "No interpolation or gap-filling performed"
   ],
-  "performed_at": "2026-09-18T22:33:41.953839"
+  "performed_at": "2026-09-23T21:38:29.398170"
 }

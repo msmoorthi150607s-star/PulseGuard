@@ -26,8 +26,12 @@ function initTechnical() {
     document.getElementById('tech-report-btn').addEventListener('click', generateReport);
 
     refreshAll();
-    setInterval(refreshLive, 5000);
-    setInterval(refreshLists, 15000);
+    // Perf: loop guards prevent overlapping refreshes if the API slows down
+    // (stacked requests were a major source of UI jank).
+    const guardLive = pgCreateLoopGuard();
+    const guardLists = pgCreateLoopGuard();
+    setInterval(() => guardLive(refreshLive), 5000);
+    setInterval(() => guardLists(refreshLists), 15000);
 }
 
 async function refreshAll() {

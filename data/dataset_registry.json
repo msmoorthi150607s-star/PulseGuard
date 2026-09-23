@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "updated": "2026-09-23",
+  "ml_feature_rule": "Only temperature and vibration may be used as ML features, for every dataset.",
+  "baseline_thresholds_protected": {
+    "NORMAL": "temperature < 38 AND vibration < 2",
+    "WARNING": "temperature 38-40 OR vibration 2-5",
+    "CRITICAL": "temperature > 40 OR vibration > 5",
+    "note": "PulseGuard demo baseline; external labels are NOT forced into these classes"
+  },
+  "datasets": [
+    {
+      "dataset_id": "OWN_DC_MOTOR",
+      "name": "DC Motor Prototype",
+      "type": "own",
+      "path": "data/own/dc_motor/",
+      "excel": "data/own/dc_motor/excel/DC_Motor_Prototype.xlsx",
+      "machine": "Low-cost rotating DC motor (college prototype)",
+      "records": 693,
+      "temperature": "available (degC, DHT11)",
+      "vibration": "available (raw ADC counts)",
+      "labels": "none (rule-based labels only for baseline)",
+      "features_for_ml": [
+        "temperature",
+        "vibration"
+      ],
+      "ml_eligible": true
+    },
+    {
+      "dataset_id": "KAIST_BALL_BEARING",
+      "name": "KAIST Ball Bearing Run-to-Failure",
+      "type": "external",
+      "path": "data/external/kaist/",
+      "excel": "data/external/kaist/excel/KAIST_Ball_Bearing_Test.xlsx",
+      "machine": "NSK 6205 ball bearing, accelerated life test rig, 1770-1780 RPM",
+      "source": "Mendeley Data DOI 10.17632/5hcdd3tdvb.6 (CC BY 4.0)",
+      "records_excerpt": 112279,
+      "records_in_full_source": "129 hourly files x ~2M rows (4.3 GB)",
+      "temperature": "available (degC, K-type thermocouple)",
+      "vibration": "available (PCB 352C34 accelerometer, x+y, 25.6 kHz)",
+      "labels": "none (run-to-failure sequence only)",
+      "features_for_ml": [
+        "temperature",
+        "vibration"
+      ],
+      "ml_eligible": true
+    },
+    {
+      "dataset_id": "ZTMF_ROTATING_MACHINE",
+      "name": "Rotating Machine Under Varying Load Conditions",
+      "type": "external",
+      "path": "data/external/ztmf_rotating_machine/",
+      "excel": "data/external/ztmf_rotating_machine/excel/ (vibration + temperature workbooks)",
+      "machine": "Rotating machine fault rig (normal / BPFI / BPFO / misalignment / unbalance; 0/2/4 Nm)",
+      "source": "Mendeley Data DOI 10.17632/ztmf3m7h5x.2 (CC BY 4.0)",
+      "records_excerpt": 321081,
+      "records_in_full_source": "45 .mat + 45 .tdms + acoustic (4.3 GB total)",
+      "temperature": "available (degC, 2 thermocouples)",
+      "vibration": "available (4 accelerometers, g)",
+      "labels": "condition encoded in filenames (Normal / Unbalance_0583mg / ...)",
+      "features_for_ml": [
+        "temperature",
+        "vibration"
+      ],
+      "excluded_source_signals": [
+        "motor current",
+        "acoustic"
+      ],
+      "ml_eligible": true
+    }
+  ],
+  "merge_policy": "Datasets are NOT merged. Each stays separately traceable. Any future combined training requires an explicit compatibility decision."
+}

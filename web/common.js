@@ -46,7 +46,14 @@ const AuthStore = {
     }
 };
 
-/** Fetch helper that attaches the Firebase ID token when present. */
+/**
+ * Fetch helper that attaches the Firebase ID token when present.
+ * Includes a request timeout so a slow/hung API can never leave a
+ * dashboard's refresh timer piling up overlapping requests (main cause
+ * of UI-wide lag when Flask is slow or down).
+ */
+const PG_FETCH_TIMEOUT_MS = 8000;
+
 async function pgFetch(endpoint, options = {}) {
     const auth = AuthStore.get();
     const headers = Object.assign({
@@ -60,10 +67,24 @@ async function pgFetch(endpoint, options = {}) {
         headers['Content-Type'] = 'application/json';
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), PG_FETCH_TIMEOUT_MS);
+
+    let response;
+    try {
+        response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
+            headers,
+            signal: controller.signal
+        });
+    } catch (err) {
+        if (err.name === 'AbortError') {
+            throw new Error('Request timed out - is the Flask API running?');
+        }
+        throw err;
+    } finally {
+        clearTimeout(timer);
+    }
 
     // Token expired / revoked: force re-login
     if (response.status === 401) {
@@ -78,7 +99,24 @@ async function pgFetch(endpoint, options = {}) {
     if (!response.ok) {
         throw new Error(data.message || `HTTP ${response.status}`);
     }
+
     return data;
+}
+
+/**
+ * Guard for periodic refresh loops: skips the tick when the previous run
+ * is still in flight, so slow requests can never stack up and freeze the UI.
+ */
+function pgCreateLoopGuard() {
+    let inFlight = false;
+    return function guarded(fn) {
+        if (inFlight) return;
+        inFlight = true;
+        Promise.resolve()
+            .then(fn)
+            .catch(() => {})
+            .finally(() => { inFlight = false; });
+    };
 }
 
 /** Escape untrusted text before inserting into HTML. */
