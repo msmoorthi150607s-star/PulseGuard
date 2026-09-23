@@ -60,6 +60,24 @@ boundaries) fetched via HTTP range requests — original bytes, nothing
 synthesised. `data/external/fetch_external_datasets.py` documents every
 source URL and re-downloads everything.
 
+**Preservation status (per dataset): B** — verified raw excerpts stored
+locally + reproducible download script for the complete original dataset.
+This is **NOT** the complete raw dataset stored locally. Verification
+(2026-09-23): local excerpt bytes SHA-256-matched against freshly
+re-downloaded remote prefixes for one file per archive (KAIST
+`LogFile_2022-06-20-17-00-31.csv`, ZTMF `0Nm_Normal.mat`,
+`0Nm_Normal.tdms` — all identical).
+
+**Own dataset record count (687 → 693):** the `OWN_DC_MOTOR` package is a
+frozen snapshot of the full Firebase `/readings_only` export as of
+2026-09-20 17:17:50 (693 readings). The previously verified 687 differed
+only by 6 later-arriving live Firebase records — append-only growth, not
+preprocessing. All 693 records were verified value-identical to Firebase
+on 2026-09-23 (0 mismatches); cleaning removed 0 rows and interpolated 0
+values. Firebase itself has since grown to 961 readings (2026-09-23); the
+authoritative live source is unchanged and this snapshot is preserved
+intentionally.
+
 ## Integrity rules (live pipeline, unchanged)
 
 - The RAW export is written first and is **never modified** afterwards.

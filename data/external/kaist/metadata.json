@@ -33,5 +33,6 @@
   "excluded_features": "none (source has only the 4 columns; temperature and vibration are the only signals)",
   "license_or_usage_information": "CC BY 4.0",
   "raw_preserved": "raw/ holds byte-verbatim excerpts; original archive re-downloadable from source_url",
+  "raw_data_preservation_status": "B - verified raw excerpts stored locally + reproducible download script for the complete original dataset (NOT the complete raw dataset locally). Complete archive = 4.3 GB, 129 hourly CSVs. Excerpt verification: 2026-09-23, local bytes SHA-256-matched against freshly re-downloaded remote prefixes (LogFile_2022-06-20-17-00-31.csv: 1,999,997 bytes identical).",
   "notes": "ML features permitted: vibration_x/vibration_y and temperature_bearing_c. Timestamps derived from filenames + documented sample clock, not present in source."
 }

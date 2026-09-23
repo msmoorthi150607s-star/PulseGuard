@@ -2,6 +2,11 @@
   "version": 1,
   "updated": "2026-09-23",
   "ml_feature_rule": "Only temperature and vibration may be used as ML features, for every dataset.",
+  "eligibility_vs_readiness": {
+    "ml_eligible": "dataset genuinely contains BOTH temperature and vibration signals (eligibility only)",
+    "ml_training_ready": false,
+    "ml_training_ready_note": "NO dataset in this registry is yet ml_training_ready for COMBINED training: units differ (ADC counts vs g vs unstated), sampling scales differ (5 s readings vs kHz waveforms), and label schemes are incompatible (none / filename condition / rule-based). Combined training additionally requires a per-window feature representation that is deliberately NOT implemented yet (mentor review: verification pass only)."
+  },
   "baseline_thresholds_protected": {
     "NORMAL": "temperature < 38 AND vibration < 2",
     "WARNING": "temperature 38-40 OR vibration 2-5",
@@ -20,14 +25,16 @@
       "temperature": "available (degC, DHT11)",
       "vibration": "available (raw ADC counts)",
       "labels": "none (rule-based labels only for baseline)",
-      "features_for_ml": [
-        "temperature",
-        "vibration"
-      ],
-      "ml_eligible": true
-    },
-    {
-      "dataset_id": "KAIST_BALL_BEARING",
+    "features_for_ml": [
+      "temperature",
+      "vibration"
+    ],
+    "ml_eligible": true,
+    "ml_training_ready": false,
+    "record_count_note": "693 readings = full Firebase /readings_only export as of 2026-09-20 17:17:50 (last reading in this frozen snapshot). The earlier verified state of 687 differed only by 6 later-arriving live Firebase records (append-only growth, not preprocessing). Live Firebase has since grown to 961 readings (2026-09-23 17:07); this package intentionally preserves the 2026-09-20 snapshot. All 693 records verified value-identical to Firebase on 2026-09-23."
+  },
+  {
+    "dataset_id": "KAIST_BALL_BEARING",
       "name": "KAIST Ball Bearing Run-to-Failure",
       "type": "external",
       "path": "data/external/kaist/",
@@ -39,14 +46,16 @@
       "temperature": "available (degC, K-type thermocouple)",
       "vibration": "available (PCB 352C34 accelerometer, x+y, 25.6 kHz)",
       "labels": "none (run-to-failure sequence only)",
-      "features_for_ml": [
-        "temperature",
-        "vibration"
-      ],
-      "ml_eligible": true
-    },
-    {
-      "dataset_id": "ZTMF_ROTATING_MACHINE",
+    "features_for_ml": [
+      "temperature",
+      "vibration"
+    ],
+    "ml_eligible": true,
+    "ml_training_ready": false,
+    "raw_data_preservation_status": "B - verified raw excerpts stored locally + reproducible download script for the complete original dataset (NOT the complete raw dataset locally)."
+  },
+  {
+    "dataset_id": "ZTMF_ROTATING_MACHINE",
       "name": "Rotating Machine Under Varying Load Conditions",
       "type": "external",
       "path": "data/external/ztmf_rotating_machine/",
@@ -66,7 +75,9 @@
         "motor current",
         "acoustic"
       ],
-      "ml_eligible": true
+      "ml_eligible": true,
+      "ml_training_ready": false,
+      "raw_data_preservation_status": "B - verified raw excerpts stored locally + reproducible download script for the complete original dataset (NOT the complete raw dataset locally)."
     }
   ],
   "merge_policy": "Datasets are NOT merged. Each stays separately traceable. Any future combined training requires an explicit compatibility decision."

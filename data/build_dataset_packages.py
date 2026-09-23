@@ -154,6 +154,7 @@ def build_kaist():
         "excluded_features": "none (source has only the 4 columns; temperature and vibration are the only signals)",
         "license_or_usage_information": "CC BY 4.0",
         "raw_preserved": "raw/ holds byte-verbatim excerpts; original archive re-downloadable from source_url",
+        "raw_data_preservation_status": "B - verified raw excerpts stored locally + reproducible download script for the complete original dataset (NOT the complete raw dataset locally). Complete archive = 4.3 GB, 129 hourly CSVs. Excerpt verification: 2026-09-23, local bytes SHA-256-matched against freshly re-downloaded remote prefixes (LogFile_2022-06-20-17-00-31.csv: 1,999,997 bytes identical).",
         "notes": "ML features permitted: vibration_x/vibration_y and temperature_bearing_c. Timestamps derived from filenames + documented sample clock, not present in source.",
     }
     (base / "metadata.json").write_text(
@@ -354,6 +355,7 @@ def build_ztmf():
         "excluded_features": ["motor_current (U/V/W phase)", "acoustic (not fetched)"],
         "license_or_usage_information": "CC BY 4.0",
         "raw_preserved": "raw/ holds byte-verbatim member prefixes; full archives re-downloadable from source_url",
+        "raw_data_preservation_status": "B - verified raw excerpts stored locally + reproducible download script for the complete original dataset (NOT the complete raw dataset locally). Complete archives = vibration.zip 2.66 GB + current,temp.zip 1.55 GB + acoustic.zip 47 MB. Excerpt verification: 2026-09-23, local bytes SHA-256-matched against freshly re-downloaded remote prefixes (0Nm_Normal.mat and 0Nm_Normal.tdms: 3,000,000 bytes each, identical).",
         "notes": {
             "vibration_files": vib_meta_files,
             "temperature_files": td_meta_files,
@@ -426,6 +428,7 @@ def build_own():
         "excluded_features": ["humidity (read by DHT11 for LCD only; not uploaded, not an ML feature)"],
         "license_or_usage_information": "Own project data",
         "raw_preserved": "Copies taken for this registry; authoritative files remain data/raw/readings_raw.xlsx (untouched) and Firebase",
+        "record_count_note": "693 readings = full Firebase /readings_only export as of 2026-09-20 17:17:50 (last reading in package). An earlier verified state showed 687; the 6-record delta is live Firebase growth (append-only, ESP32 still streaming) - NOT preprocessing. Verified 2026-09-23: all 693 records match live Firebase values exactly (0 mismatches on temperature/vibration/timestamp); cleaning report shows 0 rows removed, 0 interpolated, 5 flagged out-of-range but preserved. Firebase itself has since grown to 961 readings (as of 2026-09-23 17:07). The authoritative source remains live Firebase; this package is a frozen, traceable snapshot.",
         "notes": "Identity rule: OWN_DC_MOTOR != KAIST_BALL_BEARING != ZTMF_ROTATING_MACHINE. External datasets must never be described as data from this motor.",
     }
     (base / "metadata.json").write_text(
@@ -441,6 +444,11 @@ def build_registry(own_n, kaist_df, vib, td):
         "version": 1,
         "updated": ACCESS_DATE,
         "ml_feature_rule": "Only temperature and vibration may be used as ML features, for every dataset.",
+  "eligibility_vs_readiness": {
+    "ml_eligible": "dataset genuinely contains BOTH temperature and vibration signals (eligibility only)",
+    "ml_training_ready": false,
+    "ml_training_ready_note": "NO dataset in this registry is yet ml_training_ready for COMBINED training: units differ (ADC counts vs g vs unstated), sampling scales differ (5 s readings vs kHz waveforms), and label schemes are incompatible (none / filename condition / rule-based). Combined training additionally requires a per-window feature representation that is deliberately NOT implemented yet (mentor review: verification pass only)."
+  },
         "baseline_thresholds_protected": {
             "NORMAL": "temperature < 38 AND vibration < 2",
             "WARNING": "temperature 38-40 OR vibration 2-5",
@@ -461,6 +469,7 @@ def build_registry(own_n, kaist_df, vib, td):
                 "labels": "none (rule-based labels only for baseline)",
                 "features_for_ml": ["temperature", "vibration"],
                 "ml_eligible": True,
+                "ml_training_ready": False,
             },
             {
                 "dataset_id": "KAIST_BALL_BEARING",
@@ -477,6 +486,7 @@ def build_registry(own_n, kaist_df, vib, td):
                 "labels": "none (run-to-failure sequence only)",
                 "features_for_ml": ["temperature", "vibration"],
                 "ml_eligible": True,
+                "ml_training_ready": False,
             },
             {
                 "dataset_id": "ZTMF_ROTATING_MACHINE",
@@ -503,6 +513,7 @@ def build_registry(own_n, kaist_df, vib, td):
     print("  dataset_registry.json written")
 
     comp = {
+        "verification_note": "2026-09-23 mentor verification pass: eligibility (contains temperature + vibration) is distinct from ML-training readiness (compatible units, window/feature representation, and label scheme). All three datasets are eligible; NONE is currently training-ready for combined ML. No merging, no feature extraction, no retraining performed in this pass.",
         "comparison": [
             ["aspect", "OWN_DC_MOTOR", "KAIST_BALL_BEARING", "ZTMF_ROTATING_MACHINE"],
             ["machine", "DC motor (college rig)", "NSK 6205 ball bearing test rig", "Rotating machine fault rig (motor-driven)"],
@@ -522,8 +533,15 @@ def build_registry(own_n, kaist_df, vib, td):
             "F4 - TEMPERATURE placement: DHT11 reads ambient/air near the motor; KAIST reads the bearing itself; ZTMF reads housing. Same unit (degC) but different physical measurement points.",
             "F5 - EXCERPTS: external packages contain documented verbatim excerpts, not the full 4.3 GB archives; re-download scripts and URLs are provided for the full data.",
         ],
+        "eligibility_vs_ml_training_readiness": {
+            "definition_eligible": "contains genuine temperature AND vibration signals (necessary condition only)",
+            "definition_training_ready": "compatible units, sampling/window representation, and label scheme for actual joint model training",
+            "all_datasets_eligible": True,
+            "any_dataset_training_ready_for_combined_ml": False,
+            "reason": "units differ (F1), sampling scales differ (F2), label schemes incompatible (F3); the per-window feature extraction that would bridge the scale gap is deliberately NOT implemented at mentor request (verification pass only)"
+        },
         "recommended_use": [
-            "Combined training: NOT RECOMMENDED in this task (F1, F3).",
+            "Combined training: NOT RECOMMENDED in this task (F1, F3) - and NOT possible yet even though all datasets are eligible: ML-training readiness requires the window/feature/label bridging work that has not been done.",
             "Separate models / per-dataset experiments: appropriate - features_for_ml are aligned for future experimentation.",
             "External validation of the PulseGuard baseline: possible for KAIST early-life vs final-hours context (documented positional context), treating results as demonstration, not validated accuracy.",
             "Transfer/reference use: ZTMF filename labels can support a SEPARATE fault-vs-normal classifier experiment on ZTMF data alone, without touching the production model.pkl.",

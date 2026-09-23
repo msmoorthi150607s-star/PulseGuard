@@ -35,8 +35,8 @@
     "motor_current (U/V/W phase)",
     "acoustic (not fetched)"
   ],
-  "license_or_usage_information": "CC BY 4.0",
-  "raw_preserved": "raw/ holds byte-verbatim member prefixes; full archives re-downloadable from source_url",
+  "license_or_usage_information": "CC BY 4.0",        "raw_preserved": "raw/ holds byte-verbatim member prefixes; full archives re-downloadable from source_url",
+        "raw_data_preservation_status": "B - verified raw excerpts stored locally + reproducible download script for the complete original dataset (NOT the complete raw dataset locally). Complete archives = vibration.zip 2.66 GB + current,temp.zip 1.55 GB + acoustic.zip 47 MB. Excerpt verification: 2026-09-23, local bytes SHA-256-matched against freshly re-downloaded remote prefixes (0Nm_Normal.mat and 0Nm_Normal.tdms: 3,000,000 bytes each, identical).",
   "notes": {
     "vibration_files": {
       "0Nm_Normal.mat": {
